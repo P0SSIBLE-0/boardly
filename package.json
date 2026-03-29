@@ -11,7 +11,8 @@
     "build:worker": "wrangler deploy --dry-run --config wrangler.toml",
     "start": "next start",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "postinstall": "patch-package"
   },
   "dependencies": {
     "@paralleldrive/cuid2": "^3.3.0",
@@ -33,6 +34,7 @@
     "drizzle-kit": "^0.31.10",
     "eslint": "^9",
     "eslint-config-next": "16.2.1",
+    "patch-package": "^8.0.1",
     "tailwindcss": "^4",
     "typescript": "^5",
     "wrangler": "^4.78.0"
