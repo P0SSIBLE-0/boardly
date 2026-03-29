@@ -25,8 +25,10 @@
 .agents
 .DS_Store
 *.pem
+
 AGENTS.md
 CLAUDE.md
+
 SKILLS.md
 skills-lock.json
 

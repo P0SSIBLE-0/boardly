@@ -155,8 +155,8 @@ export function DashboardClient() {
     <>
       <main className="min-h-dvh bg-muted/40">
         <header className="border-b border-border bg-background">
-          <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-            <div className="flex items-center gap-3">
+          <div className="mx-auto flex max-w-6xl flex-col gap-4 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+            <div className="flex min-w-0 items-center gap-3">
               <Link
                 href="/"
                 className="text-[15px] font-semibold tracking-tight text-foreground"
@@ -172,7 +172,7 @@ export function DashboardClient() {
                 </>
               ) : null}
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-2 sm:justify-end sm:gap-3">
               <Link
                 href="/whiteboard"
                 className="rounded-md border border-border px-3 py-1.5 text-sm font-medium text-foreground transition hover:bg-muted"
@@ -200,7 +200,7 @@ export function DashboardClient() {
           </div>
         </header>
 
-        <div className="mx-auto max-w-6xl px-6 py-8">
+        <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
@@ -249,7 +249,7 @@ export function DashboardClient() {
               initial={{ opacity: 0, scale: 0.98 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.1, duration: 0.4, ease: EASE_OUT }}
-              className="mt-8 flex flex-col items-center justify-center rounded-lg border border-dashed border-border p-16 text-center"
+              className="mt-8 flex flex-col items-center justify-center rounded-lg border border-dashed border-border px-6 py-12 text-center sm:p-16"
             >
               <h2 className="text-[15px] font-medium text-foreground">
                 No boards yet
@@ -276,7 +276,7 @@ export function DashboardClient() {
                     duration: 0.35,
                     ease: EASE_OUT,
                   }}
-                  className="group flex flex-col justify-between rounded-lg border border-border bg-elevated p-5 transition-all hover:-translate-y-0.5 hover:shadow-sm"
+                  className="group flex flex-col justify-between rounded-lg border border-border bg-elevated p-4 transition-all hover:-translate-y-0.5 hover:shadow-sm sm:p-5"
                 >
                   <div>
                     <div className="flex items-start justify-between gap-3">

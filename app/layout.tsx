@@ -12,7 +12,7 @@ export const metadata: Metadata = {
       "Collaborative whiteboard. Start drawing instantly, bring your team in when you're ready.",
     images: [
       {
-        url: "/opengraph-image.png",
+        url: "https://boardlly.vercel.app/opengraph-image.png",
         width: 1200,
         height: 630,
         alt: "Boardly",
@@ -28,7 +28,7 @@ export const metadata: Metadata = {
       "Collaborative whiteboard. Start drawing instantly, bring your team in when you're ready.",
     images: [
       {
-        url: "/opengraph-image.png",
+        url: "https://boardlly.vercel.app/opengraph-image.png",
         width: 1200,
         height: 630,
         alt: "Boardly",

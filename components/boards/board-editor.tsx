@@ -1,6 +1,5 @@
 "use client";
 
-import type { TLEditorSnapshot } from "@tldraw/editor";
 import {
   Editor,
   getSnapshot,
@@ -27,6 +26,7 @@ import {
 import type {
   AppSession,
   BoardDetail,
+  BoardSnapshot,
   PresenceUser,
   RealtimeServerMessage,
 } from "@/shared/types";
@@ -40,7 +40,7 @@ const SHORTCUTS = [
   { key: "O", label: "Ellipse" },
   { key: "A", label: "Arrow" },
   { key: "T", label: "Text" },
-  { key: "⌘ Z", label: "Undo" },
+  { key: "Ctrl/Cmd Z", label: "Undo" },
 ];
 
 const GUEST_BOARD_TITLE = "Saved guest board";
@@ -55,11 +55,9 @@ export function BoardEditor({
   const [session, setSession] = useState<AppSession | null>(null);
   const [board, setBoard] = useState<BoardDetail | null>(null);
   const [editor, setEditor] = useState<Editor | null>(null);
-  const [initialSnapshot, setInitialSnapshot] = useState<TLEditorSnapshot | null>(
-    null,
-  );
+  const [initialSnapshot, setInitialSnapshot] = useState<BoardSnapshot>(null);
   const [loading, setLoading] = useState(true);
-  const [status, setStatus] = useState<string>("Starting board…");
+  const [status, setStatus] = useState<string>("Starting board...");
   const [title, setTitle] = useState("Untitled board");
   const [peers, setPeers] = useState<Record<string, PresenceUser>>({});
   const [showShortcuts, setShowShortcuts] = useState(false);
@@ -68,11 +66,12 @@ export function BoardEditor({
   const latestMode = useRef(mode);
   const statusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  /* Show status briefly then hide */
-  function flashStatus(msg: string) {
-    setStatus(msg);
+  function flashStatus(message: string) {
+    setStatus(message);
     setStatusVisible(true);
-    if (statusTimerRef.current) clearTimeout(statusTimerRef.current);
+    if (statusTimerRef.current) {
+      clearTimeout(statusTimerRef.current);
+    }
     statusTimerRef.current = setTimeout(() => setStatusVisible(false), 3000);
   }
 
@@ -91,13 +90,12 @@ export function BoardEditor({
           }
 
           setSession(nextSession);
-          const guestSnapshot = loadGuestSnapshot();
-          setInitialSnapshot((guestSnapshot as TLEditorSnapshot | null) ?? null);
+          setInitialSnapshot(loadGuestSnapshot());
           setTitle("Guest board");
           flashStatus(
             nextSession.user
-              ? "Signed in — save this board whenever you want."
-              : "Guest board — cached in this browser session.",
+              ? "Signed in. Save this board whenever you want."
+              : "Guest board. Cached in this browser session.",
           );
         })
         .finally(() => {
@@ -119,7 +117,7 @@ export function BoardEditor({
 
           setSession(nextSession);
           setBoard(nextBoard);
-          setInitialSnapshot((nextBoard.snapshot as TLEditorSnapshot | null) ?? null);
+          setInitialSnapshot(nextBoard.snapshot);
           setTitle(nextBoard.title);
           flashStatus("Connected to your board.");
         })
@@ -145,15 +143,13 @@ export function BoardEditor({
     };
   }, [boardId, mode]);
 
-  const applyRemoteSnapshot = useEffectEvent((snapshot: TLEditorSnapshot | null) => {
-    if (!editor) {
+  const applyRemoteSnapshot = useEffectEvent((snapshot: BoardSnapshot) => {
+    if (!editor || !snapshot) {
       return;
     }
 
     editor.store.mergeRemoteChanges(() => {
-      if (snapshot) {
-        loadSnapshot(editor.store, snapshot);
-      }
+      loadSnapshot(editor.store, snapshot);
     });
   });
 
@@ -164,7 +160,7 @@ export function BoardEditor({
 
     const removeStoreListener = editor.store.listen(
       () => {
-        const snapshot = getSnapshot(editor.store);
+        const snapshot = getSnapshot(editor.store).document;
 
         if (latestMode.current === "guest") {
           saveGuestSnapshot(snapshot);
@@ -251,9 +247,7 @@ export function BoardEditor({
               ),
             );
 
-            if (message.snapshot) {
-              applyRemoteSnapshot(message.snapshot);
-            }
+            applyRemoteSnapshot(message.snapshot);
             return;
           }
 
@@ -328,8 +322,8 @@ export function BoardEditor({
       return null;
     }
 
-    flashStatus("Saving guest board…");
-    const snapshot = getSnapshot(editor.store);
+    flashStatus("Saving guest board...");
+    const snapshot = getSnapshot(editor.store).document;
     const nextBoard = await createBoard({
       title: GUEST_BOARD_TITLE,
       snapshot,
@@ -374,14 +368,14 @@ export function BoardEditor({
       url: invite.url,
     };
 
-    if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
+    if (
+      typeof navigator !== "undefined" &&
+      typeof navigator.share === "function"
+    ) {
       try {
         await navigator.share(shareData);
       } catch (error) {
-        if (
-          error instanceof DOMException &&
-          error.name === "AbortError"
-        ) {
+        if (error instanceof DOMException && error.name === "AbortError") {
           flashStatus("Board saved. Share canceled.");
           window.location.href = `/boards/${nextBoard.id}`;
           return;
@@ -437,7 +431,6 @@ export function BoardEditor({
     URL.revokeObjectURL(url);
   }
 
-  /* ── Loading state ───────────────────────── */
   if (loading) {
     return (
       <div className="flex min-h-dvh items-center justify-center bg-muted/40">
@@ -462,132 +455,137 @@ export function BoardEditor({
               strokeLinecap="round"
             />
           </svg>
-          <p className="mt-3 text-sm text-muted-fg">Preparing the whiteboard…</p>
+          <p className="mt-3 text-sm text-muted-fg">Preparing the whiteboard...</p>
         </div>
       </div>
     );
   }
 
-  /* ── Main UI ─────────────────────────────── */
   return (
-    <main className="flex h-screen flex-col bg-background overflow-hidden relative">
-      {/* ── Top bar ────────────────────────── */}
-      <div className="relative bottom-0 z-100 flex h-14 shrink-0 items-center justify-between border-b border-border bg-background px-4">
-        {/* Left group */}
-        <div className="flex items-center gap-2">
-          <Link
-            href={mode === "guest" ? "/" : "/boards"}
-            className="flex h-8 w-8 items-center justify-center rounded-md text-muted-fg transition hover:bg-muted hover:text-foreground"
-            title="Back"
-          >
-            <svg
-              className="h-4 w-4"
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth={2}
-              stroke="currentColor"
+    <main className="relative flex min-h-dvh flex-col overflow-hidden bg-background">
+      <div className="z-50 shrink-0 border-b border-border bg-background/95 backdrop-blur">
+        <div className="flex flex-col gap-3 px-3 py-3 sm:px-4 sm:py-2">
+          <div className="flex min-w-0 items-center gap-2">
+            <Link
+              href={mode === "guest" ? "/" : "/boards"}
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-muted-fg transition hover:bg-muted hover:text-foreground"
+              title="Back"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M15.75 19.5L8.25 12l7.5-7.5"
+              <svg
+                className="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={2}
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M15.75 19.5L8.25 12l7.5-7.5"
+                />
+              </svg>
+            </Link>
+
+            <div className="mx-1 h-4 w-px shrink-0 bg-border" />
+
+            {mode === "board" ? (
+              <input
+                value={title}
+                onChange={(event) => setTitle(event.target.value)}
+                onBlur={() => {
+                  void handleRenameBoard();
+                }}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    event.currentTarget.blur();
+                  }
+                }}
+                className="h-9 min-w-0 flex-1 rounded-lg border border-transparent bg-transparent px-2 text-sm font-medium text-foreground outline-none transition hover:border-border focus:border-border focus:bg-muted/50"
               />
-            </svg>
-          </Link>
+            ) : (
+              <span className="px-2 text-sm font-medium text-muted-fg">
+                Guest board
+              </span>
+            )}
+          </div>
 
-          <div className="h-4 w-px bg-border mx-1" />
-
-          {mode === "board" ? (
-            <input
-              value={title}
-              onChange={(event) => setTitle(event.target.value)}
-              onBlur={() => {
-                void handleRenameBoard();
-              }}
-              onKeyDown={(event) => {
-                if (event.key === "Enter") {
-                  event.currentTarget.blur();
-                }
-              }}
-              className="h-7 min-w-[140px] rounded border border-transparent bg-transparent px-2 text-sm font-medium text-foreground outline-none transition hover:border-border focus:border-border focus:bg-muted/50"
-            />
-          ) : (
-            <span className="px-2 text-[13px] font-medium text-muted-fg">
-              Guest board
-            </span>
-          )}
-        </div>
-
-        {/* Right group */}
-        <div className="flex shrink-0 items-center gap-2">
-          {/* Peer indicators */}
-          {peerList.length > 0 && (
-            <div className="flex items-center -space-x-1.5 mr-2">
-              {peerList.slice(0, 5).map((peer) => (
-                <div
-                  key={peer.userId}
-                  className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-elevated text-[10px] font-semibold text-white"
-                  style={{ backgroundColor: peer.color }}
-                  title={peer.name}
-                >
-                  {peer.name?.charAt(0)?.toUpperCase() ?? "?"}
-                </div>
-              ))}
-              {peerList.length > 5 && (
-                <div className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-elevated bg-muted text-[10px] font-semibold text-muted-fg">
-                  +{peerList.length - 5}
-                </div>
-              )}
+          <div className="flex flex-wrap items-center gap-2 sm:justify-between">
+            <div className="flex min-h-8 flex-wrap items-center gap-2">
+              {peerList.length > 0 ? (
+                <>
+                  <div className="hidden items-center -space-x-1.5 sm:flex">
+                    {peerList.slice(0, 5).map((peer) => (
+                      <div
+                        key={peer.userId}
+                        className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-elevated text-[10px] font-semibold text-white"
+                        style={{ backgroundColor: peer.color }}
+                        title={peer.name}
+                      >
+                        {peer.name?.charAt(0)?.toUpperCase() ?? "?"}
+                      </div>
+                    ))}
+                    {peerList.length > 5 ? (
+                      <div className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-elevated bg-muted text-[10px] font-semibold text-muted-fg">
+                        +{peerList.length - 5}
+                      </div>
+                    ) : null}
+                  </div>
+                  <span className="rounded-full border border-border px-2.5 py-1 text-[11px] font-medium text-muted-fg sm:hidden">
+                    {peerList.length} live
+                  </span>
+                </>
+              ) : null}
             </div>
-          )}
 
-          <button
-            type="button"
-            onClick={() => {
-              void handleExportPng();
-            }}
-            className="rounded-md border border-border px-3 py-1.5 text-xs font-medium text-foreground transition hover:bg-muted"
-          >
-            Export
-          </button>
-          {mode === "board" ? (
-            <button
-              type="button"
-              onClick={() => {
-                void handleCreateShareLink();
-              }}
-              className="rounded-md bg-foreground px-3 py-1.5 text-xs font-medium text-background transition hover:bg-accent-hover"
-            >
-              Share
-            </button>
-          ) : (
-            <>
+            <div className="flex flex-1 flex-wrap items-center justify-end gap-2 sm:flex-none">
               <button
                 type="button"
                 onClick={() => {
-                  void handleSaveGuestBoard();
+                  void handleExportPng();
                 }}
-                className="rounded-md bg-foreground px-3 py-1.5 text-xs font-medium text-background transition hover:bg-accent-hover"
+                className="rounded-md border border-border px-3 py-2 text-xs font-medium text-foreground transition hover:bg-muted"
               >
-                {session?.user ? "Save to account" : "Sign in to save"}
+                Export
               </button>
-              {session?.user ? (
+              {mode === "board" ? (
                 <button
                   type="button"
                   onClick={() => {
-                    void handleShareGuestBoard();
+                    void handleCreateShareLink();
                   }}
-                  className="rounded-md border border-border px-3 py-1.5 text-xs font-medium text-foreground transition hover:bg-muted"
+                  className="rounded-md bg-foreground px-3 py-2 text-xs font-medium text-background transition hover:bg-accent-hover"
                 >
                   Share
                 </button>
-              ) : null}
-            </>
-          )}
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      void handleSaveGuestBoard();
+                    }}
+                    className="rounded-md bg-foreground px-3 py-2 text-xs font-medium text-background transition hover:bg-accent-hover"
+                  >
+                    {session?.user ? "Save to account" : "Sign in to save"}
+                  </button>
+                  {session?.user ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        void handleShareGuestBoard();
+                      }}
+                      className="rounded-md border border-border px-3 py-2 text-xs font-medium text-foreground transition hover:bg-muted"
+                    >
+                      Share
+                    </button>
+                  ) : null}
+                </>
+              )}
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* ── Canvas ─────────────────────────── */}
       <div className="relative flex-1">
         <Tldraw
           key={`${mode}-${boardId ?? "guest"}`}
@@ -597,7 +595,6 @@ export function BoardEditor({
           }}
         />
 
-        {/* Peer cursors */}
         {peerList.map((peer) => (
           <div
             key={peer.userId}
@@ -622,81 +619,78 @@ export function BoardEditor({
           </div>
         ))}
 
-        {/* Floating status toast */}
         <AnimatePresence>
-          {statusVisible && (
+          {statusVisible ? (
             <motion.div
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 4 }}
               transition={{ duration: 0.2 }}
-              className="absolute bottom-20 left-1/2 z-30 -translate-x-1/2 rounded-full border border-border bg-background/95 px-4 py-1.5 text-xs font-medium text-foreground shadow-sm backdrop-blur-md"
+              className="absolute bottom-24 left-1/2 z-30 w-[calc(100%-2rem)] max-w-max -translate-x-1/2 rounded-2xl border border-border bg-background/95 px-4 py-2 text-center text-xs font-medium text-foreground shadow-sm backdrop-blur-md sm:bottom-20 sm:w-auto sm:rounded-full"
             >
               {status}
             </motion.div>
-          )}
+          ) : null}
         </AnimatePresence>
 
-        {/* Guest mode banner */}
-        {mode === "guest" && !statusVisible && (
-          <div className="absolute bottom-20 left-1/2 z-20 -translate-x-1/2 flex items-center gap-2 rounded-full border border-border bg-background/95 px-4 py-1.5 text-xs font-medium shadow-sm backdrop-blur-md text-muted-fg pointer-events-auto">
-            Cached in browser.
+        {mode === "guest" && !statusVisible ? (
+          <div className="absolute bottom-24 left-1/2 z-20 flex w-[calc(100%-2rem)] max-w-sm -translate-x-1/2 flex-wrap items-center justify-center gap-2 rounded-2xl border border-border bg-background/95 px-4 py-2 text-center text-xs font-medium text-muted-fg shadow-sm backdrop-blur-md sm:bottom-20 sm:max-w-max sm:rounded-full">
+            <span>Cached in browser.</span>
             <button
               type="button"
               onClick={() => {
                 void handleSaveGuestBoard();
               }}
-              className="text-foreground hover:underline decoration-foreground/30 underline-offset-2 transition"
+              className="text-foreground transition hover:underline"
             >
               {session?.user ? "Save to account" : "Sign in to save"}
             </button>
             {session?.user ? (
               <>
-                <span className="text-border">•</span>
+                <span className="hidden text-border sm:inline">|</span>
                 <button
                   type="button"
                   onClick={() => {
                     void handleShareGuestBoard();
                   }}
-                  className="text-foreground hover:underline decoration-foreground/30 underline-offset-2 transition"
+                  className="text-foreground transition hover:underline"
                 >
                   Share
                 </button>
               </>
             ) : null}
           </div>
-        )}
+        ) : null}
 
-        {/* Help / Shortcuts toggle */}
         <AnimatePresence>
-          {showShortcuts && (
+          {showShortcuts ? (
             <motion.div
               initial={{ opacity: 0, y: 8, scale: 0.96 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 8, scale: 0.96 }}
               transition={{ duration: 0.15 }}
-              className="absolute bottom-14 right-4 z-40 w-52 rounded-xl border border-border bg-elevated p-4 shadow-lg"
+              className="absolute bottom-14 right-3 z-40 w-[min(18rem,calc(100vw-1.5rem))] rounded-xl border border-border bg-elevated p-4 shadow-lg sm:right-4 sm:w-52"
             >
               <p className="mb-3 text-[11px] font-semibold uppercase tracking-widest text-muted-fg">
                 Shortcuts
               </p>
               <div className="space-y-2">
-                {SHORTCUTS.map((s) => (
+                {SHORTCUTS.map((shortcut) => (
                   <div
-                    key={s.key}
+                    key={shortcut.key}
                     className="flex items-center justify-between"
                   >
                     <span className="text-[13px] text-foreground">
-                      {s.label}
+                      {shortcut.label}
                     </span>
                     <kbd className="rounded bg-muted px-1.5 py-0.5 font-mono text-[11px] text-muted-fg">
-                      {s.key}
+                      {shortcut.key}
                     </kbd>
                   </div>
                 ))}
               </div>
 
-              {board && (
+              {board ? (
                 <div className="mt-4 border-t border-border pt-3">
                   <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-fg">
                     Board
@@ -708,15 +702,15 @@ export function BoardEditor({
                     Updated: {new Date(board.updatedAt).toLocaleDateString()}
                   </p>
                 </div>
-              )}
+              ) : null}
             </motion.div>
-          )}
+          ) : null}
         </AnimatePresence>
 
         <button
           type="button"
           onClick={() => setShowShortcuts(!showShortcuts)}
-          className="absolute bottom-4 right-4 z-40 flex h-9 w-9 items-center justify-center rounded-full border border-border bg-elevated text-sm font-medium text-muted-fg shadow-sm transition hover:bg-muted hover:text-foreground"
+          className="absolute bottom-4 right-3 z-40 flex h-10 w-10 items-center justify-center rounded-full border border-border bg-elevated text-sm font-medium text-muted-fg shadow-sm transition hover:bg-muted hover:text-foreground sm:right-4 sm:h-9 sm:w-9"
           title="Keyboard shortcuts"
         >
           ?

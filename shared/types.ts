@@ -1,8 +1,8 @@
-import type { TLEditorSnapshot } from "@tldraw/editor";
+import type { TLStoreSnapshot } from "@tldraw/editor";
 
 export type BoardRole = "owner" | "editor";
 
-export type BoardSnapshot = TLEditorSnapshot | null;
+export type BoardSnapshot = TLStoreSnapshot | null;
 
 export interface AppSession {
   user: {
