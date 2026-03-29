@@ -2,7 +2,6 @@
 
 import {
   Editor,
-  getSnapshot,
   loadSnapshot,
   Tldraw,
 } from "tldraw";
@@ -163,7 +162,7 @@ export function BoardEditor({
 
     const removeStoreListener = editor.store.listen(
       () => {
-        const snapshot = getSnapshot(editor.store).document;
+        const snapshot = editor.store.getStoreSnapshot();
 
         if (latestMode.current === "guest") {
           saveGuestSnapshot(snapshot);
@@ -326,7 +325,7 @@ export function BoardEditor({
     }
 
     flashStatus("Saving guest board...");
-    const snapshot = getSnapshot(editor.store).document;
+    const snapshot = editor.store.getStoreSnapshot();
     const nextBoard = await createBoard({
       title: GUEST_BOARD_TITLE,
       snapshot,
@@ -466,7 +465,7 @@ export function BoardEditor({
 
   return (
     <main className="relative flex min-h-dvh flex-col overflow-hidden bg-background">
-      <div className="z-50 shrink-0 border-b border-border bg-background/95 backdrop-blur">
+      <div className="z-50 shrink-0 border-b border-border bg-background/95">
         <div className="flex flex-wrap items-center justify-between gap-3 px-3 py-3 sm:px-4 sm:py-2.5">
           <div className="flex min-w-0 flex-1 items-center gap-2">
             <Link

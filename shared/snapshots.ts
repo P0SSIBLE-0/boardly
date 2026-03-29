@@ -3,6 +3,7 @@ import type { TLStoreSnapshot } from "@tldraw/editor";
 
 type LegacySnapshotShape = {
   document?: unknown;
+  session?: unknown;
 };
 
 function isObject(value: unknown): value is Record<string, unknown> {
