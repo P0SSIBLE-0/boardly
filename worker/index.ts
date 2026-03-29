@@ -28,6 +28,102 @@ function trimPath(url: URL) {
   return url.pathname.replace(/\/+$/, "") || "/";
 }
 
+function normalizeBaseUrl(value: string) {
+  return value.endsWith("/") ? value.slice(0, -1) : value;
+}
+
+function resolveProxyUrl(baseUrl: string, requestUrl: URL) {
+  const targetBaseUrl = new URL(normalizeBaseUrl(baseUrl));
+  const targetUrl = new URL(requestUrl.toString());
+
+  targetUrl.protocol = targetBaseUrl.protocol;
+  targetUrl.username = targetBaseUrl.username;
+  targetUrl.password = targetBaseUrl.password;
+  targetUrl.host = targetBaseUrl.host;
+
+  return targetUrl;
+}
+
+const HOP_BY_HOP_RESPONSE_HEADERS = new Set([
+  "connection",
+  "content-encoding",
+  "content-length",
+  "keep-alive",
+  "proxy-authenticate",
+  "proxy-authorization",
+  "te",
+  "trailer",
+  "transfer-encoding",
+  "upgrade",
+]);
+
+function copyProxyResponseHeaders(
+  response: Response,
+  sourceBaseUrl: string,
+  requestUrl: URL,
+) {
+  const headers = new Headers();
+  const normalizedSourceBaseUrl = normalizeBaseUrl(sourceBaseUrl);
+
+  for (const [key, value] of response.headers) {
+    const normalizedKey = key.toLowerCase();
+
+    if (
+      normalizedKey === "set-cookie" ||
+      HOP_BY_HOP_RESPONSE_HEADERS.has(normalizedKey)
+    ) {
+      continue;
+    }
+
+    if (
+      normalizedKey === "location" &&
+      value.startsWith(normalizedSourceBaseUrl)
+    ) {
+      headers.set(
+        "location",
+        `${requestUrl.origin}${value.slice(normalizedSourceBaseUrl.length)}`,
+      );
+      continue;
+    }
+
+    headers.append(key, value);
+  }
+
+  for (const cookie of response.headers.getSetCookie?.() ?? []) {
+    headers.append("set-cookie", cookie);
+  }
+
+  return headers;
+}
+
+async function proxyToApp(request: Request, env: Env) {
+  const requestUrl = new URL(request.url);
+  const targetUrl = resolveProxyUrl(env.BOARDLY_APP_URL, requestUrl);
+  const headers = new Headers(request.headers);
+
+  headers.set("x-forwarded-host", requestUrl.host);
+  headers.set("x-forwarded-proto", requestUrl.protocol.replace(":", ""));
+  headers.delete("host");
+  headers.delete("content-length");
+
+  const response = await fetch(targetUrl, {
+    method: request.method,
+    headers,
+    body: ["GET", "HEAD"].includes(request.method) ? undefined : request.body,
+    redirect: "manual",
+  });
+
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers: copyProxyResponseHeaders(
+      response,
+      env.BOARDLY_APP_URL,
+      requestUrl,
+    ),
+  });
+}
+
 async function handleSession(request: Request, env: Env) {
   const session = await requireSession(request, env);
 
@@ -231,6 +327,10 @@ const worker = {
 
     if (pathname === "/health") {
       return json({ ok: true, requestId: createId() });
+    }
+
+    if (!pathname.startsWith("/api")) {
+      return proxyToApp(request, env);
     }
 
     return routeApi(request, env);

@@ -5,6 +5,7 @@ import type {
   RealtimeClientMessage,
   RealtimeServerMessage,
 } from "../../shared/types";
+import { normalizeBoardSnapshot } from "../../shared/snapshots";
 import { loadBoardSnapshot, persistBoardSnapshot } from "../data/boards";
 import { verifyRealtimeToken } from "../lib/realtime";
 import type { Env } from "../types";
@@ -108,11 +109,11 @@ export class BoardRoom {
     ) as RealtimeClientMessage;
 
     if (message.type === "snapshot") {
-      this.snapshot = message.snapshot;
+      this.snapshot = normalizeBoardSnapshot(message.snapshot);
       this.broadcast(
         {
           type: "snapshot",
-          snapshot: message.snapshot,
+          snapshot: this.snapshot,
           authorUserId: connection.userId,
         },
         socket,

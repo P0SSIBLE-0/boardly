@@ -30,6 +30,7 @@ import type {
   PresenceUser,
   RealtimeServerMessage,
 } from "@/shared/types";
+import { normalizeBoardSnapshot } from "@/shared/snapshots";
 
 type BoardMode = "guest" | "board";
 
@@ -90,7 +91,7 @@ export function BoardEditor({
           }
 
           setSession(nextSession);
-          setInitialSnapshot(loadGuestSnapshot());
+          setInitialSnapshot(normalizeBoardSnapshot(loadGuestSnapshot()));
           setTitle("Guest board");
           flashStatus(
             nextSession.user
@@ -117,7 +118,7 @@ export function BoardEditor({
 
           setSession(nextSession);
           setBoard(nextBoard);
-          setInitialSnapshot(nextBoard.snapshot);
+          setInitialSnapshot(normalizeBoardSnapshot(nextBoard.snapshot));
           setTitle(nextBoard.title);
           flashStatus("Connected to your board.");
         })
@@ -144,12 +145,14 @@ export function BoardEditor({
   }, [boardId, mode]);
 
   const applyRemoteSnapshot = useEffectEvent((snapshot: BoardSnapshot) => {
-    if (!editor || !snapshot) {
+    const normalizedSnapshot = normalizeBoardSnapshot(snapshot);
+
+    if (!editor || !normalizedSnapshot) {
       return;
     }
 
     editor.store.mergeRemoteChanges(() => {
-      loadSnapshot(editor.store, snapshot);
+      loadSnapshot(editor.store, normalizedSnapshot);
     });
   });
 
@@ -464,8 +467,8 @@ export function BoardEditor({
   return (
     <main className="relative flex min-h-dvh flex-col overflow-hidden bg-background">
       <div className="z-50 shrink-0 border-b border-border bg-background/95 backdrop-blur">
-        <div className="flex flex-col gap-3 px-3 py-3 sm:px-4 sm:py-2">
-          <div className="flex min-w-0 items-center gap-2">
+        <div className="flex flex-wrap items-center justify-between gap-3 px-3 py-3 sm:px-4 sm:py-2.5">
+          <div className="flex min-w-0 flex-1 items-center gap-2">
             <Link
               href={mode === "guest" ? "/" : "/boards"}
               className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-muted-fg transition hover:bg-muted hover:text-foreground"
@@ -509,7 +512,7 @@ export function BoardEditor({
             )}
           </div>
 
-          <div className="flex flex-wrap items-center gap-2 sm:justify-between">
+          <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-2.5">
             <div className="flex min-h-8 flex-wrap items-center gap-2">
               {peerList.length > 0 ? (
                 <>
@@ -537,63 +540,63 @@ export function BoardEditor({
               ) : null}
             </div>
 
-            <div className="flex flex-1 flex-wrap items-center justify-end gap-2 sm:flex-none">
+            <button
+              type="button"
+              onClick={() => {
+                void handleExportPng();
+              }}
+              className="rounded-md border border-border px-3 py-2 text-xs font-medium text-foreground transition hover:bg-muted"
+            >
+              Export
+            </button>
+            {mode === "board" ? (
               <button
                 type="button"
                 onClick={() => {
-                  void handleExportPng();
+                  void handleCreateShareLink();
                 }}
-                className="rounded-md border border-border px-3 py-2 text-xs font-medium text-foreground transition hover:bg-muted"
+                className="rounded-md bg-foreground px-3 py-2 text-xs font-medium text-background transition hover:bg-accent-hover"
               >
-                Export
+                Share
               </button>
-              {mode === "board" ? (
+            ) : (
+              <>
                 <button
                   type="button"
                   onClick={() => {
-                    void handleCreateShareLink();
+                    void handleSaveGuestBoard();
                   }}
                   className="rounded-md bg-foreground px-3 py-2 text-xs font-medium text-background transition hover:bg-accent-hover"
                 >
-                  Share
+                  {session?.user ? "Save to account" : "Sign in to save"}
                 </button>
-              ) : (
-                <>
+                {session?.user ? (
                   <button
                     type="button"
                     onClick={() => {
-                      void handleSaveGuestBoard();
+                      void handleShareGuestBoard();
                     }}
-                    className="rounded-md bg-foreground px-3 py-2 text-xs font-medium text-background transition hover:bg-accent-hover"
+                    className="rounded-md border border-border px-3 py-2 text-xs font-medium text-foreground transition hover:bg-muted"
                   >
-                    {session?.user ? "Save to account" : "Sign in to save"}
+                    Share
                   </button>
-                  {session?.user ? (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        void handleShareGuestBoard();
-                      }}
-                      className="rounded-md border border-border px-3 py-2 text-xs font-medium text-foreground transition hover:bg-muted"
-                    >
-                      Share
-                    </button>
-                  ) : null}
-                </>
-              )}
-            </div>
+                ) : null}
+              </>
+            )}
           </div>
         </div>
       </div>
 
-      <div className="relative flex-1">
-        <Tldraw
-          key={`${mode}-${boardId ?? "guest"}`}
-          snapshot={initialSnapshot ?? undefined}
-          onMount={(mountedEditor) => {
-            setEditor(mountedEditor);
-          }}
-        />
+      <div className="relative min-h-0 flex-1 overflow-hidden">
+        <div className="absolute inset-0 h-full w-full">
+          <Tldraw
+            key={`${mode}-${boardId ?? "guest"}`}
+            snapshot={initialSnapshot ?? undefined}
+            onMount={(mountedEditor) => {
+              setEditor(mountedEditor);
+            }}
+          />
+        </div>
 
         {peerList.map((peer) => (
           <div

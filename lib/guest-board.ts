@@ -1,4 +1,5 @@
 import type { BoardSnapshot } from "@/shared/types";
+import { normalizeBoardSnapshot } from "@/shared/snapshots";
 
 const SNAPSHOT_KEY = "boardly:guest:snapshot";
 
@@ -8,7 +9,7 @@ export function loadGuestSnapshot(): BoardSnapshot {
   }
 
   const value = window.sessionStorage.getItem(SNAPSHOT_KEY);
-  return value ? (JSON.parse(value) as BoardSnapshot) : null;
+  return value ? normalizeBoardSnapshot(JSON.parse(value)) : null;
 }
 
 export function saveGuestSnapshot(snapshot: BoardSnapshot) {
@@ -16,7 +17,10 @@ export function saveGuestSnapshot(snapshot: BoardSnapshot) {
     return;
   }
 
-  window.sessionStorage.setItem(SNAPSHOT_KEY, JSON.stringify(snapshot ?? null));
+  window.sessionStorage.setItem(
+    SNAPSHOT_KEY,
+    JSON.stringify(normalizeBoardSnapshot(snapshot)),
+  );
 }
 
 export function clearGuestSnapshot() {

@@ -100,6 +100,51 @@ button:focus-visible {
 
 .tl-container {
   background: #f8fafc !important;
+  --tl-color-background: #f8fafc;
+  --tl-color-low: #eef2f7;
+  --tl-color-low-border: #dbe4f0;
+  --tl-color-muted-1: rgba(15, 23, 42, 0.1);
+  --tl-color-muted-2: rgba(15, 23, 42, 0.06);
+  --tl-color-panel: rgba(255, 255, 255, 0.96);
+  --tl-color-panel-contrast: #ffffff;
+  --tl-color-panel-overlay: rgba(255, 255, 255, 0.92);
+  --tl-color-text: #0f172a;
+  --tl-color-text-0: #0f172a;
+  --tl-color-text-1: #334155;
+  --tl-color-text-3: #64748b;
+  --tl-color-selected: #2563eb;
+  --tl-color-selected-contrast: #ffffff;
+}
+
+.tl-container .tlui-layout,
+.tl-container .tlui-menu,
+.tl-container .tlui-style-panel,
+.tl-container .tlui-contextual-toolbar,
+.tl-container .tlui-help-menu {
+  color: var(--tl-color-text);
+}
+
+.tl-container .tlui-layout__top,
+.tl-container .tlui-layout__bottom,
+.tl-container .tlui-menu,
+.tl-container .tlui-style-panel,
+.tl-container .tlui-contextual-toolbar,
+.tl-container .tlui-help-menu {
+  backdrop-filter: blur(14px);
+}
+
+.tl-container .tlui-button,
+.tl-container .tlui-button__tool,
+.tl-container .tlui-page-menu__trigger,
+.tl-container .tlui-style-panel .tlui-button {
+  color: var(--tl-color-text-1);
+}
+
+.tl-container .tlui-button__tool,
+.tl-container .tlui-page-menu__trigger,
+.tl-container .tlui-style-panel,
+.tl-container .tlui-contextual-toolbar {
+  box-shadow: 0 12px 34px rgba(15, 23, 42, 0.08);
 }
 
 /* ── Scrollbar ─────────────────────────────── */

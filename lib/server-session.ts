@@ -12,24 +12,32 @@ function getWorkerBaseUrl() {
 }
 
 export async function getServerSession(): Promise<AppSession> {
-  const cookieStore = await cookies();
-  const cookieHeader = cookieStore
-    .getAll()
-    .map(({ name, value }) => `${name}=${value}`)
-    .join("; ");
+  try {
+    const cookieStore = await cookies();
+    const cookieHeader = cookieStore
+      .getAll()
+      .map(({ name, value }) => `${name}=${value}`)
+      .join("; ");
 
-  const response = await fetch(`${getWorkerBaseUrl()}/api/session`, {
-    method: "GET",
-    headers: cookieHeader ? { cookie: cookieHeader } : undefined,
-    cache: "no-store",
-  });
+    const response = await fetch(`${getWorkerBaseUrl()}/api/session`, {
+      method: "GET",
+      headers: cookieHeader ? { cookie: cookieHeader } : undefined,
+      cache: "no-store",
+    });
 
-  if (!response.ok) {
+    if (!response.ok) {
+      return {
+        user: null,
+        session: null,
+      };
+    }
+
+    return (await response.json()) as AppSession;
+  } catch {
+    // Keep public routes available even when the worker is temporarily down.
     return {
       user: null,
       session: null,
     };
   }
-
-  return (await response.json()) as AppSession;
 }

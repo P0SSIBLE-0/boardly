@@ -13,6 +13,7 @@ import type {
   BoardSummary,
   InviteLink,
 } from "../../shared/types";
+import { normalizeBoardSnapshot } from "../../shared/snapshots";
 import type { Env } from "../types";
 
 function toIso(value: Date | null) {
@@ -24,7 +25,7 @@ function parseSnapshot(value: string | null): BoardSnapshot {
     return null;
   }
 
-  return JSON.parse(value) as BoardSnapshot;
+  return normalizeBoardSnapshot(JSON.parse(value));
 }
 
 function formatBoardSummary(row: {
@@ -135,7 +136,7 @@ export async function createBoardForUser(
 
   await db.insert(boardDocuments).values({
     boardId,
-    snapshotJson: JSON.stringify(input.snapshot ?? null),
+    snapshotJson: JSON.stringify(normalizeBoardSnapshot(input.snapshot)),
     version: 1,
     updatedAt: now,
   });
@@ -315,7 +316,7 @@ export async function persistBoardSnapshot(
     await db
       .update(boardDocuments)
       .set({
-        snapshotJson: JSON.stringify(snapshot ?? null),
+        snapshotJson: JSON.stringify(normalizeBoardSnapshot(snapshot)),
         version: existing[0].version + 1,
         updatedAt: now,
       })
@@ -323,7 +324,7 @@ export async function persistBoardSnapshot(
   } else {
     await db.insert(boardDocuments).values({
       boardId,
-      snapshotJson: JSON.stringify(snapshot ?? null),
+      snapshotJson: JSON.stringify(normalizeBoardSnapshot(snapshot)),
       version: 1,
       updatedAt: now,
     });
