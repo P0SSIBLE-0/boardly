@@ -130,11 +130,13 @@ Since your Cloudflare worker is already deployed, the main Vercel requirement is
 In Vercel Project Settings > Environment Variables, add:
 
 - `BOARDLY_WORKER_URL`
+- `NEXT_PUBLIC_TLDRAW_LICENSE_KEY`
 
 Use your deployed worker URL, for example:
 
 ```env
 BOARDLY_WORKER_URL=https://your-worker-subdomain.workers.dev
+NEXT_PUBLIC_TLDRAW_LICENSE_KEY=your-tldraw-license-key
 ```
 
 Add it to:
@@ -202,6 +204,7 @@ Before pushing to GitHub:
 Before going live:
 
 - Vercel has `BOARDLY_WORKER_URL`
+- Vercel has `NEXT_PUBLIC_TLDRAW_LICENSE_KEY`
 - Cloudflare has `BOARDLY_APP_URL`
 - Cloudflare secrets are set
 - D1 binding points at the correct production database

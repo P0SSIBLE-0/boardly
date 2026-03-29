@@ -587,15 +587,14 @@ export function BoardEditor({
       </div>
 
       <div className="relative min-h-0 flex-1 overflow-hidden">
-        <div className="absolute inset-0 h-full w-full">
-          <Tldraw
-            key={`${mode}-${boardId ?? "guest"}`}
-            snapshot={initialSnapshot ?? undefined}
-            onMount={(mountedEditor) => {
-              setEditor(mountedEditor);
-            }}
-          />
-        </div>
+        <Tldraw
+          key={`${mode}-${boardId ?? "guest"}`}
+          className="h-full w-full"
+          snapshot={initialSnapshot ?? undefined}
+          onMount={(mountedEditor) => {
+            setEditor(mountedEditor);
+          }}
+        />
 
         {peerList.map((peer) => (
           <div
