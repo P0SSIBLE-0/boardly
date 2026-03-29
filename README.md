@@ -1,36 +1,242 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Boardly
 
-## Getting Started
+Boardly is a guest-first collaborative whiteboard MVP built with Next.js 16, TypeScript, tldraw, Better Auth, and Cloudflare Durable Objects.
 
-First, run the development server:
+Guests can open a whiteboard instantly at `/whiteboard`, draw locally with no sign-in, and later save that board into an authenticated account for permanent storage and multiplayer collaboration.
+
+## Stack
+
+- Next.js 16 App Router
+- TypeScript
+- Tailwind CSS v4
+- Motion
+- tldraw
+- Better Auth
+- Cloudflare Workers
+- Cloudflare Durable Objects
+- Cloudflare D1
+- Drizzle ORM
+
+## Features
+
+- Landing page with instant whiteboard CTA
+- Guest whiteboard with session-scoped local persistence
+- Infinite canvas with tldraw tools and keyboard shortcuts
+- Authenticated dashboard with board list
+- Create, rename, duplicate, and delete boards
+- Save a guest board into a logged-in account
+- Share-link invites for collaborators
+- Realtime collaboration with live presence and cursors
+- Persistent board snapshots backed by D1
+- PNG export from the editor
+
+## Project Structure
+
+- `app/` Next.js routes, pages, and the `/api/*` proxy to the worker
+- `components/` landing, auth, dashboard, invite, editor, and reusable UI
+- `lib/` client API helpers, server session helpers, guest board persistence, and utilities
+- `shared/` cross-runtime types used by the app and worker
+- `worker/` Better Auth, D1 schema, board APIs, and Durable Object realtime room
+
+## Environment Variables
+
+The required variables are documented in [.env.example](/C:/Users/ACER/Desktop/Practice/NextJS/boardly/.env.example).
+
+### Keep private
+
+Do not commit these values:
+
+- `BETTER_AUTH_SECRET`
+- `REALTIME_SECRET`
+- `CLOUDFLARE_ACCOUNT_ID`
+- `CLOUDFLARE_D1_DATABASE_ID`
+- `CLOUDFLARE_API_TOKEN`
+
+### Safe app config
+
+These are configuration values, not secrets:
+
+- `BOARDLY_APP_URL`
+- `BOARDLY_WORKER_URL`
+
+## Local Development
+
+1. Install dependencies:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. Copy [.env.example](/C:/Users/ACER/Desktop/Practice/NextJS/boardly/.env.example) into your local env files:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- Use `.env.local` for the Next.js app.
+- Use `.env` or `.dev.vars` for Wrangler local worker development.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+3. Create a D1 database:
 
-## Learn More
+```bash
+npx wrangler d1 create boardly
+```
 
-To learn more about Next.js, take a look at the following resources:
+4. Paste the returned D1 `database_id` into:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- `CLOUDFLARE_D1_DATABASE_ID` in your local env file for Drizzle/Wrangler tooling
+- `database_id` in [wrangler.toml](/C:/Users/ACER/Desktop/Practice/NextJS/boardly/wrangler.toml)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+5. Add worker secrets for deployed environments:
 
-## Deploy on Vercel
+```bash
+npx wrangler secret put BETTER_AUTH_SECRET
+npx wrangler secret put REALTIME_SECRET
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+6. Apply the migration:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+npx wrangler d1 execute boardly --local --file=worker/migrations/0001_init.sql
+```
+
+7. Start the worker:
+
+```bash
+npm run dev:worker
+```
+
+8. In another terminal, start Next.js:
+
+```bash
+npm run dev:web
+```
+
+9. Open [http://localhost:3000](http://localhost:3000).
+
+## Deploying To Vercel
+
+This app uses:
+
+- Vercel for the Next.js frontend
+- Cloudflare Workers for auth, APIs, realtime, and persistence
+
+Since your Cloudflare worker is already deployed, the main Vercel requirement is pointing the frontend at that worker.
+
+### 1. Add the Vercel project
+
+1. Import the GitHub repo into Vercel.
+2. Let Vercel detect `Next.js`.
+3. Keep the app root as the repository root.
+
+### 2. Add the required Vercel environment variable
+
+In Vercel Project Settings > Environment Variables, add:
+
+- `BOARDLY_WORKER_URL`
+
+Use your deployed worker URL, for example:
+
+```env
+BOARDLY_WORKER_URL=https://your-worker-subdomain.workers.dev
+```
+
+Add it to:
+
+- `Production`
+- `Preview`
+- `Development` if you also use `vercel dev`
+
+### 3. Deploy the frontend
+
+Trigger a deployment from Vercel after adding the variable.
+
+If you change `BOARDLY_WORKER_URL` later, redeploy the project so the new value is picked up.
+
+## Updating Cloudflare For Vercel
+
+Once Vercel gives you a production URL, update the Cloudflare worker config so auth callbacks and invite links point back to the frontend correctly.
+
+### Cloudflare worker variables
+
+In Cloudflare Workers & Pages > your worker > Settings > Variables and Secrets:
+
+- Set `BOARDLY_APP_URL` to your Vercel production URL
+- Set `BOARDLY_WORKER_URL` to your deployed worker URL
+
+Example:
+
+```env
+BOARDLY_APP_URL=https://your-project.vercel.app
+BOARDLY_WORKER_URL=https://your-worker-subdomain.workers.dev
+```
+
+### Cloudflare worker secrets
+
+Make sure these secrets exist in Cloudflare:
+
+- `BETTER_AUTH_SECRET`
+- `REALTIME_SECRET`
+
+If you need to set them via CLI:
+
+```bash
+npx wrangler secret put BETTER_AUTH_SECRET
+npx wrangler secret put REALTIME_SECRET
+```
+
+### Cloudflare bindings
+
+Your deployed worker must still have:
+
+- the D1 binding `DB`
+- the Durable Object binding `BOARD_ROOM`
+
+Those remain configured through [wrangler.toml](/C:/Users/ACER/Desktop/Practice/NextJS/boardly/wrangler.toml) and your Cloudflare deployment.
+
+## Production Checklist
+
+Before pushing to GitHub:
+
+- Keep `.env*` and `.dev.vars*` out of git
+- Do not commit real secret values
+- Do not commit a real Cloudflare API token
+- Replace any real production IDs or URLs you do not want public
+
+Before going live:
+
+- Vercel has `BOARDLY_WORKER_URL`
+- Cloudflare has `BOARDLY_APP_URL`
+- Cloudflare secrets are set
+- D1 binding points at the correct production database
+- Worker invite links open your Vercel frontend, not localhost
+
+## Realtime Architecture
+
+- Guest boards never touch the backend and stay in browser session storage.
+- Permanent boards live in D1 and are loaded through the worker API.
+- Each board has a Durable Object room that acts as the authoritative realtime coordinator.
+- Snapshot updates are broadcast to all connected collaborators and persisted with debounce.
+- Presence data stays ephemeral and is not written to the database.
+
+## Main Routes
+
+- `/` landing page
+- `/whiteboard` instant guest board
+- `/sign-in` sign in
+- `/sign-up` sign up
+- `/boards` authenticated dashboard
+- `/boards/[boardId]` authenticated collaborative board
+- `/invite/[token]` invite acceptance flow
+
+## Verification
+
+These checks currently pass:
+
+```bash
+node node_modules/typescript/bin/tsc --noEmit
+node node_modules/eslint/bin/eslint.js .
+node node_modules/next/dist/bin/next build
+```
+
+## Notes
+
+- Collaboration requires login by design.
+- Invite flow is link-based for the MVP and does not send email.
+- Guest sessions are temporary and scoped to the current browser session.

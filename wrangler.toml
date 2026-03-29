@@ -1,0 +1,22 @@
+name = "boardly-worker"
+main = "worker/index.ts"
+compatibility_date = "2026-03-29"
+compatibility_flags = ["nodejs_compat"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "boardly"
+database_id = "replace-with-your-d1-database-id"
+migrations_dir = "worker/migrations"
+
+[[durable_objects.bindings]]
+name = "BOARD_ROOM"
+class_name = "BoardRoom"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["BoardRoom"]
+
+[vars]
+BOARDLY_APP_URL = "http://localhost:3000"
+BOARDLY_WORKER_URL = "https://your-worker-subdomain.workers.dev"

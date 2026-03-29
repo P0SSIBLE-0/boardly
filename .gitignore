@@ -10,6 +10,7 @@
 !.yarn/releases
 !.yarn/versions
 
+
 # testing
 /coverage
 
@@ -21,8 +22,13 @@
 /build
 
 # misc
+.agents
 .DS_Store
 *.pem
+AGENTS.md
+CLAUDE.md
+SKILLS.md
+skills-lock.json
 
 # debug
 npm-debug.log*
@@ -31,7 +37,12 @@ yarn-error.log*
 .pnpm-debug.log*
 
 # env files (can opt-in for committing if needed)
-.env*
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.dev.vars*
 
 # vercel
 .vercel
