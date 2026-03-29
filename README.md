@@ -138,6 +138,7 @@ Use your deployed worker URL, for example:
 BOARDLY_WORKER_URL=https://your-worker-subdomain.workers.dev
 NEXT_PUBLIC_TLDRAW_LICENSE_KEY=your-tldraw-license-key
 ```
+*(Note: Tldraw v4 strictly requires a license key for production deployments. Get a free non-commercial key at tldraw.dev)*
 
 Add it to:
 
