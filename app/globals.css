@@ -1,6 +1,5 @@
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap");
 @import "tailwindcss";
-@import "tldraw/tldraw.css";
 
 
 :root {
@@ -92,55 +91,43 @@ button:focus-visible {
   border-radius: 6px;
 }
 
-/* ── tldraw canvas ─────────────────────────── */
-
-.tl-container {
-  background: #f8fafc !important;
-  --tl-color-background: #f8fafc;
-  --tl-color-low: #eef2f7;
-  --tl-color-low-border: #dbe4f0;
-  --tl-color-muted-1: rgba(15, 23, 42, 0.1);
-  --tl-color-muted-2: rgba(15, 23, 42, 0.06);
-  --tl-color-panel: rgba(255, 255, 255, 0.96);
-  --tl-color-panel-contrast: #ffffff;
-  --tl-color-panel-overlay: rgba(255, 255, 255, 0.92);
-  --tl-color-text: #0f172a;
-  --tl-color-text-0: #0f172a;
-  --tl-color-text-1: #334155;
-  --tl-color-text-3: #64748b;
-  --tl-color-selected: #2563eb;
-  --tl-color-selected-contrast: #ffffff;
+/* Fabric.js canvas */
+.fabric-canvas-container {
+  background: #f8f9fa;
+  background-image: 
+    radial-gradient(circle, #e9ecef 1px, transparent 1px);
+  background-size: 20px 20px;
+  width: 100%;
+  height: 100%;
+  position: relative;
 }
 
-.tl-container .tlui-layout,
-.tl-container .tlui-menu,
-.tl-container .tlui-style-panel,
-.tl-container .tlui-contextual-toolbar,
-.tl-container .tlui-help-menu {
-  color: var(--tl-color-text);
+.fabric-canvas-container > canvas {
+  display: block;
+  position: relative;
+  z-index: 1;
 }
 
-.tl-container .tlui-button,
-.tl-container .tlui-button__tool,
-.tl-container .tlui-page-menu__trigger,
-.tl-container .tlui-style-panel .tlui-button {
-  color: var(--tl-color-text-1);
+.fabric-canvas-container .canvas-container {
+  position: absolute !important;
+  top: 0;
+  left: 0;
+  width: 100% !important;
+  height: 100% !important;
+  z-index: 1;
 }
 
-.tl-container .tlui-button__tool,
-.tl-container .tlui-page-menu__trigger,
-.tl-container .tlui-style-panel,
-.tl-container .tlui-contextual-toolbar {
-  box-shadow: 0 12px 34px rgba(15, 23, 42, 0.08);
+.fabric-canvas-container .canvas-container canvas {
+  position: absolute !important;
+  top: 0;
+  left: 0;
 }
 
-.tl-container .tl-canvas {
-  content-visibility: visible;
+.fabric-canvas-container .canvas-container .upper-canvas {
+  z-index: 2 !important;
 }
 
-.tl-container {
-  height: 90dvh;
-}
+/* ── tldraw canvas (removed) ─────────────────────────── */
 
 /* ── Scrollbar ─────────────────────────────── */
 

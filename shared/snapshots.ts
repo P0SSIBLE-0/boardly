@@ -1,21 +1,18 @@
 import type { BoardSnapshot } from "./types";
-import type { TLStoreSnapshot } from "@tldraw/editor";
-
-type LegacySnapshotShape = {
-  document?: unknown;
-  session?: unknown;
-};
 
 function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
 
-function isStoreSnapshot(value: unknown): value is TLStoreSnapshot {
-  return isObject(value) && "store" in value && "schema" in value;
+function isFabricCanvasJSON(value: unknown): value is BoardSnapshot {
+  if (!isObject(value)) {
+    return false;
+  }
+  return "objects" in value && Array.isArray(value.objects);
 }
 
 export function normalizeBoardSnapshot(snapshot: unknown): BoardSnapshot {
-  if (isStoreSnapshot(snapshot)) {
+  if (isFabricCanvasJSON(snapshot)) {
     return snapshot;
   }
 
@@ -24,10 +21,14 @@ export function normalizeBoardSnapshot(snapshot: unknown): BoardSnapshot {
   }
 
   if ("document" in snapshot) {
-    const legacySnapshot = snapshot as LegacySnapshotShape;
-    return isStoreSnapshot(legacySnapshot.document)
+    const legacySnapshot = snapshot as { document?: unknown };
+    return isFabricCanvasJSON(legacySnapshot.document)
       ? legacySnapshot.document
       : null;
+  }
+
+  if ("store" in snapshot || "schema" in snapshot) {
+    return null;
   }
 
   return null;

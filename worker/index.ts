@@ -288,9 +288,21 @@ async function routeApi(request: Request, env: Env) {
   const url = new URL(request.url);
   const pathname = trimPath(url);
 
+  if (request.method === "OPTIONS") {
+    const origin = request.headers.get("origin") || env.BOARDLY_APP_URL;
+    return new Response(null, {
+      headers: {
+        "Access-Control-Allow-Origin": origin,
+        "Access-Control-Allow-Methods": "GET, POST, PATCH, DELETE, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type",
+        "Access-Control-Allow-Credentials": "true",
+      },
+    });
+  }
+
   if (pathname.startsWith("/api/auth")) {
     const auth = createAuth(env);
-    return auth.handler(request);
+    return await auth.handler(request);
   }
 
   if (pathname === "/api/session") {
@@ -305,7 +317,8 @@ async function routeApi(request: Request, env: Env) {
     return handleInvite(request, env, pathname);
   }
 
-  return badRequest("Route not found", 404);
+  const response = badRequest("Route not found", 404);
+  return response;
 }
 
 const worker = {
@@ -333,7 +346,17 @@ const worker = {
       return proxyToApp(request, env);
     }
 
-    return routeApi(request, env);
+    const response = await routeApi(request, env);
+    const origin = request.headers.get("origin") || env.BOARDLY_APP_URL;
+    const corsHeaders = new Headers(response.headers);
+    corsHeaders.set("Access-Control-Allow-Origin", origin);
+    corsHeaders.set("Access-Control-Allow-Credentials", "true");
+    
+    return new Response(response.body, {
+      status: response.status,
+      statusText: response.statusText,
+      headers: corsHeaders,
+    });
   },
 };
 

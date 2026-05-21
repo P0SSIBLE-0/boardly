@@ -27,7 +27,13 @@ export function createAuth(env: Env) {
       protocol: "auto",
     },
     basePath: "/api/auth",
-    trustedOrigins: [env.BOARDLY_APP_URL, env.BOARDLY_WORKER_URL],
+    trustedOrigins: [
+      env.BOARDLY_APP_URL,
+      env.BOARDLY_WORKER_URL,
+      "http://localhost:3000",
+      "http://localhost:3001",
+      "http://localhost:8787",
+    ],
     emailAndPassword: {
       enabled: true,
       minPasswordLength: 8,

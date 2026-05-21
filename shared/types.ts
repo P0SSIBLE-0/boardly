@@ -1,8 +1,48 @@
-import type { TLStoreSnapshot } from "@tldraw/editor";
-
 export type BoardRole = "owner" | "editor";
 
-export type BoardSnapshot = TLStoreSnapshot | null;
+export interface FabricCanvasObject {
+  type: string;
+  version: string;
+  originX: string;
+  originY: string;
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+  fill: string | null;
+  stroke: string | null;
+  strokeWidth: number;
+  strokeDashArray: number[] | null;
+  strokeLineCap: string;
+  strokeDashOffset: number;
+  strokeLineJoin: string;
+  strokeUniform: boolean;
+  strokeMiterLimit: number;
+  scaleX: number;
+  scaleY: number;
+  angle: number;
+  flipX: boolean;
+  flipY: boolean;
+  opacity: number;
+  shadow: unknown | null;
+  visible: boolean;
+  backgroundColor: string;
+  fillRule: string;
+  paintFirst: string;
+  globalCompositeOperation: string;
+  skewX: number;
+  skewY: number;
+  [key: string]: unknown;
+}
+
+export interface FabricCanvasJSON {
+  version: string;
+  objects: FabricCanvasObject[];
+  background: string | null;
+  [key: string]: unknown;
+}
+
+export type BoardSnapshot = FabricCanvasJSON | null;
 
 export interface AppSession {
   user: {

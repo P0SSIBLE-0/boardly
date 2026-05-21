@@ -8,6 +8,8 @@ import type {
   RealtimeTokenResponse,
 } from "@/shared/types";
 
+const WORKER_URL = process.env.NEXT_PUBLIC_WORKER_URL || "http://localhost:8787";
+
 export class ApiRequestError extends Error {
   constructor(
     message: string,
@@ -27,10 +29,11 @@ async function parseResponse<T>(response: Response) {
   return JSON.parse(text) as T;
 }
 
-export async function apiRequest<T>(input: string, init?: RequestInit) {
-  const response = await fetch(input, {
+export async function apiRequest<T>(input: string, init?: RequestInit, useWorker = false) {
+  const url = useWorker ? `${WORKER_URL}${input}` : input;
+  const response = await fetch(url, {
     ...init,
-    credentials: "same-origin",
+    credentials: useWorker ? "include" : "same-origin",
     headers: {
       "content-type": "application/json",
       ...(init?.headers ?? {}),
@@ -53,7 +56,7 @@ export async function apiRequest<T>(input: string, init?: RequestInit) {
 export function getSession() {
   return apiRequest<AppSession>("/api/session", {
     method: "GET",
-  });
+  }, true);
 }
 
 export function signInWithEmail(payload: AuthFormInput) {
@@ -65,7 +68,7 @@ export function signInWithEmail(payload: AuthFormInput) {
       callbackURL: payload.callbackURL,
       rememberMe: payload.rememberMe ?? true,
     }),
-  });
+  }, true);
 }
 
 export function signUpWithEmail(payload: AuthFormInput) {
@@ -78,20 +81,20 @@ export function signUpWithEmail(payload: AuthFormInput) {
       callbackURL: payload.callbackURL,
       rememberMe: payload.rememberMe ?? true,
     }),
-  });
+  }, true);
 }
 
 export function signOut() {
   return apiRequest("/api/auth/sign-out", {
     method: "POST",
     body: JSON.stringify({}),
-  });
+  }, true);
 }
 
 export function getBoards() {
   return apiRequest<BoardSummary[]>("/api/boards", {
     method: "GET",
-  });
+  }, true);
 }
 
 export function createBoard(input: {
@@ -101,40 +104,40 @@ export function createBoard(input: {
   return apiRequest<BoardDetail>("/api/boards", {
     method: "POST",
     body: JSON.stringify(input),
-  });
+  }, true);
 }
 
 export function getBoard(boardId: string) {
   return apiRequest<BoardDetail>(`/api/boards/${boardId}`, {
     method: "GET",
-  });
+  }, true);
 }
 
 export function updateBoard(boardId: string, title: string) {
   return apiRequest<BoardDetail>(`/api/boards/${boardId}`, {
     method: "PATCH",
     body: JSON.stringify({ title }),
-  });
+  }, true);
 }
 
 export function duplicateBoard(boardId: string) {
   return apiRequest<BoardDetail>(`/api/boards/${boardId}/duplicate`, {
     method: "POST",
     body: JSON.stringify({}),
-  });
+  }, true);
 }
 
 export function deleteBoard(boardId: string) {
   return apiRequest<{ success: boolean }>(`/api/boards/${boardId}`, {
     method: "DELETE",
-  });
+  }, true);
 }
 
 export function createShareLink(boardId: string) {
   return apiRequest<InviteLink>(`/api/boards/${boardId}/share-links`, {
     method: "POST",
     body: JSON.stringify({}),
-  });
+  }, true);
 }
 
 export function acceptInvite(token: string) {
@@ -144,6 +147,7 @@ export function acceptInvite(token: string) {
       method: "POST",
       body: JSON.stringify({}),
     },
+    true,
   );
 }
 
@@ -154,5 +158,6 @@ export function getRealtimeToken(boardId: string) {
       method: "POST",
       body: JSON.stringify({}),
     },
+    true,
   );
 }
