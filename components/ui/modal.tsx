@@ -2,6 +2,7 @@
 
 import { useEffect, useId } from "react";
 import { AnimatePresence, motion } from "motion/react";
+import { X } from "lucide-react";
 
 const EASE_OUT = [0.16, 1, 0.3, 1] as const;
 
@@ -53,7 +54,7 @@ export function Modal({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.18 }}
-          className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-950/45 px-4 backdrop-blur-sm"
+          className="fixed inset-0 z-200 flex items-center justify-center bg-slate-950/45 px-4 backdrop-blur-sm"
           onMouseDown={(event) => {
             if (event.target === event.currentTarget) {
               onClose();
@@ -94,19 +95,7 @@ export function Modal({
                 className="inline-flex h-8 w-8 items-center justify-center rounded-full text-muted-fg transition hover:bg-muted hover:text-foreground"
                 aria-label="Close dialog"
               >
-                <svg
-                  className="h-4 w-4"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
+                <X className="h-4 w-4" />
               </button>
             </div>
 

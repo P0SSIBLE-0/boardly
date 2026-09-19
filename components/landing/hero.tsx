@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { motion } from "motion/react";
+import { MousePointer } from "lucide-react";
 
 const EASE_OUT = [0.16, 1, 0.3, 1] as const;
 
@@ -187,20 +188,7 @@ export function LandingHero() {
                       ease: "easeInOut",
                     }}
                   >
-                    <svg
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className="text-white drop-shadow-md"
-                    >
-                      <path d="m3 3 7.07 16.97 2.51-7.39 7.39-2.51L3 3z" />
-                      <path d="m13 13 6 6" />
-                    </svg>
+                    <MousePointer className="h-4 w-4 text-white drop-shadow-md fill-white/20" />
                     <div className="mt-1 ml-4 rounded bg-zinc-900 border border-zinc-800 px-1.5 py-0.5 text-[10px] font-medium text-white shadow-sm">
                       Guest
                     </div>

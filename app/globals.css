@@ -100,20 +100,20 @@ button:focus-visible {
   width: 100%;
   height: 100%;
   position: relative;
+  touch-action: none;
 }
 
 .fabric-canvas-container > canvas {
   display: block;
   position: relative;
   z-index: 1;
+  touch-action: none;
 }
 
 .fabric-canvas-container .canvas-container {
   position: absolute !important;
   top: 0;
   left: 0;
-  width: 100% !important;
-  height: 100% !important;
   z-index: 1;
 }
 
@@ -121,13 +121,54 @@ button:focus-visible {
   position: absolute !important;
   top: 0;
   left: 0;
+  touch-action: none;
 }
 
 .fabric-canvas-container .canvas-container .upper-canvas {
   z-index: 2 !important;
 }
 
-/* ── tldraw canvas (removed) ─────────────────────────── */
+/* ── Checkerboard & Slider ───────────────────── */
+.bg-checkerboard {
+  background-image: linear-gradient(45deg, #e4e4e7 25%, transparent 25%),
+    linear-gradient(-45deg, #e4e4e7 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #e4e4e7 75%),
+    linear-gradient(-45deg, transparent 75%, #e4e4e7 75%);
+  background-size: 8px 8px;
+  background-position: 0 0, 0 4px, 4px -4px, -4px 0px;
+}
+
+input[type="range"].slider-lavender {
+  -webkit-appearance: none;
+  appearance: none;
+  background: #e0e7ff;
+  height: 4px;
+  border-radius: 9999px;
+  outline: none;
+}
+
+input[type="range"].slider-lavender::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #1e1e24;
+  border: 2px solid #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+}
+
+input[type="range"].slider-lavender::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #1e1e24;
+  border: 2px solid #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+}
+
 
 /* ── Scrollbar ─────────────────────────────── */
 

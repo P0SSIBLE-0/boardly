@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { motion } from "motion/react";
+import { CircleX, Loader2 } from "lucide-react";
 import { acceptInvite, getSession } from "@/lib/api";
 
 type InviteState = "checking" | "joining" | "error";
@@ -65,38 +66,9 @@ export function InviteClient({ token }: { token: string }) {
           {/* Status indicator */}
           <div className="mx-auto mb-5 flex h-12 w-12 items-center justify-center rounded-full bg-muted">
             {state === "error" ? (
-              <svg
-                className="h-6 w-6 text-destructive"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth={2}
-                stroke="currentColor"
-              >
-                <circle cx="12" cy="12" r="10" />
-                <line x1="15" y1="9" x2="9" y2="15" />
-                <line x1="9" y1="9" x2="15" y2="15" />
-              </svg>
+              <CircleX className="h-6 w-6 text-destructive" />
             ) : (
-              <svg
-                className="h-5 w-5 animate-spin text-muted-fg"
-                viewBox="0 0 24 24"
-                fill="none"
-              >
-                <circle
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  strokeWidth="3"
-                  className="opacity-20"
-                />
-                <path
-                  d="M12 2a10 10 0 0 1 10 10"
-                  stroke="currentColor"
-                  strokeWidth="3"
-                  strokeLinecap="round"
-                />
-              </svg>
+              <Loader2 className="h-5 w-5 animate-spin text-muted-fg" />
             )}
           </div>
 

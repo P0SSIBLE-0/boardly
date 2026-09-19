@@ -53,8 +53,18 @@ function copyResponseHeaders(response: Response, request: NextRequest) {
 }
 
 async function proxy(request: NextRequest, params: { path: string[] }) {
+  let workerBaseUrl: string;
+  try {
+    workerBaseUrl = getWorkerBaseUrl();
+  } catch {
+    return Response.json(
+      { error: "BOARDLY_WORKER_URL is not configured. Set it to your worker URL and restart." },
+      { status: 502 },
+    );
+  }
+
   const pathname = params.path.join("/");
-  const target = new URL(`${getWorkerBaseUrl()}/api/${pathname}`);
+  const target = new URL(`${workerBaseUrl}/api/${pathname}`);
   target.search = request.nextUrl.search;
 
   const headers = new Headers(request.headers);
@@ -73,7 +83,15 @@ async function proxy(request: NextRequest, params: { path: string[] }) {
     init.body = await request.arrayBuffer();
   }
 
-  const response = await fetch(target, init);
+  let response: Response;
+  try {
+    response = await fetch(target, init);
+  } catch {
+    return Response.json(
+      { error: "Cannot reach the worker. Start it with `npm run dev:worker` and check BOARDLY_WORKER_URL." },
+      { status: 502 },
+    );
+  }
   const responseHeaders = copyResponseHeaders(response, request);
 
   return new Response(response.body, {

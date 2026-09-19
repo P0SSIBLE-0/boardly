@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { startTransition, useEffect, useState } from "react";
 import { motion } from "motion/react";
+import { CircleAlert } from "lucide-react";
 import {
   deleteBoard,
   duplicateBoard,
@@ -223,17 +224,7 @@ export function DashboardClient() {
               className="mt-6 flex items-center gap-2 rounded-lg border border-red-200 bg-destructive-light px-4 py-3 text-sm text-red-700"
               role="alert"
             >
-              <svg
-                className="h-4 w-4 shrink-0 text-red-500"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth={2}
-                stroke="currentColor"
-              >
-                <circle cx="12" cy="12" r="10" />
-                <line x1="12" y1="8" x2="12" y2="12" />
-                <line x1="12" y1="16" x2="12.01" y2="16" />
-              </svg>
+              <CircleAlert className="h-4 w-4 shrink-0 text-red-500" />
               {error}
             </motion.div>
           ) : null}
@@ -254,7 +245,7 @@ export function DashboardClient() {
               <h2 className="text-[15px] font-medium text-foreground">
                 No boards yet
               </h2>
-              <p className="mt-1 max-w-[240px] text-sm text-muted-fg">
+              <p className="mt-1 max-w-60 text-sm text-muted-fg">
                 Create a new board or open a guest board to get started.
               </p>
               <Link
@@ -286,11 +277,10 @@ export function DashboardClient() {
                         </h2>
                       </div>
                       <span
-                        className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide ${
-                          board.shareLinkEnabled
+                        className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide ${board.shareLinkEnabled
                             ? "bg-accent/10 text-accent-hover"
                             : "bg-muted text-muted-fg"
-                        }`}
+                          }`}
                       >
                         {board.shareLinkEnabled ? "Shared" : "Private"}
                       </span>
