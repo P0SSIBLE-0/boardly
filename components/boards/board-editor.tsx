@@ -306,6 +306,8 @@ export function BoardEditor({
       {/* Top Header & Floating Toolbar */}
       <BoardHeader
         mode={mode}
+        boardId={boardId}
+        session={session}
         title={title}
         onTitleChange={setTitle}
         onRenameBoard={() => void handleRenameBoard()}

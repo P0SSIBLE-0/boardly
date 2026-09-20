@@ -1,13 +1,6 @@
-import { redirect } from "next/navigation";
-import { LandingHero } from "@/components/landing/hero";
-import { getServerSession } from "@/lib/server-session";
+import { BoardEditor } from "@/components/boards/board-editor";
 
-export default async function Home() {
-  const session = await getServerSession();
-
-  if (session.user) {
-    redirect("/boards");
-  }
-
-  return <LandingHero />;
+export default function Home() {
+  return <BoardEditor mode="guest" />;
 }
+
