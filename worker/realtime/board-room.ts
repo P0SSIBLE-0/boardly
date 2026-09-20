@@ -72,11 +72,33 @@ export class BoardRoom {
     this.connections.set(server, connection);
     this.bindSocket(boardId, server, connection);
 
+    const initialPresence: PresenceUser = {
+      userId: claims.userId,
+      name: claims.name,
+      color: claims.color,
+      x: 0,
+      y: 0,
+      updatedAt: Date.now(),
+    };
+    this.presence.set(claims.userId, initialPresence);
+
+    const existingPeers = Array.from(this.presence.values()).filter(
+      (peer) => peer.userId !== claims.userId,
+    );
+
     this.send(server, {
       type: "init",
       snapshot: this.snapshot,
-      peers: Array.from(this.presence.values()),
+      peers: existingPeers,
     });
+
+    this.broadcast(
+      {
+        type: "presence",
+        presence: initialPresence,
+      },
+      server,
+    );
 
     return new Response(null, {
       status: 101,
@@ -133,10 +155,13 @@ export class BoardRoom {
       };
 
       this.presence.set(connection.userId, nextPresence);
-      this.broadcast({
-        type: "presence",
-        presence: nextPresence,
-      });
+      this.broadcast(
+        {
+          type: "presence",
+          presence: nextPresence,
+        },
+        socket,
+      );
     }
   }
 

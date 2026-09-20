@@ -40,6 +40,7 @@ interface UseCanvasManagerProps {
   canvasElement?: HTMLCanvasElement | null;
   initialSnapshot?: BoardSnapshot;
   onCanvasChange?: (snapshot: BoardSnapshot) => void;
+  onPointerMove?: (coords: { x: number; y: number }) => void;
 }
 
 export function useCanvasManager({
@@ -47,9 +48,14 @@ export function useCanvasManager({
   canvasElement,
   initialSnapshot,
   onCanvasChange,
+  onPointerMove,
 }: UseCanvasManagerProps) {
   const targetCanvasEl = canvasElement ?? canvasElementRef?.current ?? null;
   const initialSnapshotLoadedRef = useRef(false);
+  const onPointerMoveRef = useRef(onPointerMove);
+  useEffect(() => {
+    onPointerMoveRef.current = onPointerMove;
+  }, [onPointerMove]);
   const fabricCanvasRef = useRef<FabricCanvas | null>(null);
   const fabricModuleRef = useRef<typeof import("fabric") | null>(null);
   const undoStackRef = useRef<BoardSnapshot[]>([]);
@@ -1071,8 +1077,12 @@ export function useCanvasManager({
       });
 
       canvas.on("mouse:move", (opt: TPointerEventInfo) => {
+        const pointer = getCanvasPointer(canvas, opt);
+        if (onPointerMoveRef.current) {
+          onPointerMoveRef.current(pointer);
+        }
+
         if (isErasingRef.current) {
-          const pointer = getCanvasPointer(canvas, opt);
           const points = eraserTrailPointsRef.current;
           const prevPointer = points.length > 0 ? points[points.length - 1] : pointer;
           const now = Date.now();
@@ -1101,7 +1111,6 @@ export function useCanvasManager({
 
         if (!isDrawingShapeRef.current) return;
 
-        const pointer = getCanvasPointer(canvas, opt);
         lastPointerRef.current = pointer;
         const start = shapeStartPointRef.current;
 

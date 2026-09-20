@@ -5,7 +5,11 @@ import type { Env } from "../types";
 const encoder = new TextEncoder();
 
 function getSecret(env: Env) {
-  return encoder.encode(env.REALTIME_SECRET ?? env.BETTER_AUTH_SECRET);
+  return encoder.encode(
+    env.REALTIME_SECRET ||
+    env.BETTER_AUTH_SECRET ||
+    "boardly-local-dev-realtime-secret-key-1234567890",
+  );
 }
 
 export async function createRealtimeToken(

@@ -129,6 +129,7 @@ export function BoardEditor({
   }, [boardId, mode, setTitle, setLoading, flashStatus]);
 
   const broadcastSnapshotRef = useRef<(snapshot: BoardSnapshot) => void>(() => {});
+  const broadcastPresenceRef = useRef<(coords: { x: number; y: number }) => void>(() => {});
 
   // Handle local change broadcast & persistence
   const handleCanvasChange = useCallback(
@@ -150,7 +151,7 @@ export function BoardEditor({
   // Canvas manager hook
   const {
     fabricCanvasRef,
-    loadSnapshotIntoCanvas,
+    handleSelectObject,
     updateStrokeColor,
     updateFillColor,
     updateStrokeWidth,
@@ -158,10 +159,11 @@ export function BoardEditor({
     updateEdges,
     updateOpacity,
     handleLayerAction,
-    handleClearCanvas,
+    loadSnapshotIntoCanvas,
     handleZoomIn,
     handleZoomOut,
     handleResetZoom,
+    handleClearCanvas,
     handleRecenter,
     handleAddImage,
     handleExportPng,
@@ -173,10 +175,13 @@ export function BoardEditor({
     canvasElement,
     initialSnapshot,
     onCanvasChange: handleCanvasChange,
+    onPointerMove: (coords) => {
+      broadcastPresenceRef.current(coords);
+    },
   });
 
   // Realtime hook
-  const { broadcastSnapshot } = useBoardRealtime({
+  const { broadcastSnapshot, broadcastPresence } = useBoardRealtime({
     boardId,
     mode,
     onRemoteSnapshot: (snapshot) => {
@@ -187,6 +192,12 @@ export function BoardEditor({
   useEffect(() => {
     broadcastSnapshotRef.current = broadcastSnapshot;
   }, [broadcastSnapshot]);
+
+  useEffect(() => {
+    broadcastPresenceRef.current = (coords) => {
+      broadcastPresence(coords.x, coords.y);
+    };
+  }, [broadcastPresence]);
 
   // Board actions
   async function saveGuestBoard() {
@@ -349,9 +360,26 @@ export function BoardEditor({
       />
 
       {/* Canvas Workspace */}
-      <div className="relative min-h-0 flex-1 overflow-hidden fabric-canvas-container">
+      <div
+        className="relative min-h-0 flex-1 overflow-hidden fabric-canvas-container"
+        onPointerMove={(e) => {
+          const rect = e.currentTarget.getBoundingClientRect();
+          const canvas = fabricCanvasRef.current;
+          if (!canvas) return;
+          const vpt = canvas.viewportTransform;
+          const mouseX = e.clientX - rect.left;
+          const mouseY = e.clientY - rect.top;
+          const sceneX = vpt ? (mouseX - vpt[4]) / vpt[0] : mouseX;
+          const sceneY = vpt ? (mouseY - vpt[5]) / vpt[3] : mouseY;
+          broadcastPresenceRef.current({ x: sceneX, y: sceneY });
+        }}
+      >
         <canvas ref={handleCanvasRef} id="fabric-canvas" />
-        <CollaboratorCursors peers={peerList} />
+        <CollaboratorCursors
+          peers={peerList}
+          currentUserId={session?.user?.id}
+          canvas={fabricCanvasRef.current}
+        />
       </div>
 
       {/* Bottom Controls (Zoom, History, Status, Recenter) */}

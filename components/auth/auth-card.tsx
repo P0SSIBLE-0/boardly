@@ -70,7 +70,7 @@ export function AuthCard({
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, ease: EASE_OUT }}
-        className="w-full max-w-[380px]"
+        className="w-full max-w-95"
       >
         <div className="rounded-xl border border-border bg-background p-8 shadow-sm">
           <Link
