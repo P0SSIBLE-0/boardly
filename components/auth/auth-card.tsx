@@ -4,7 +4,7 @@ import { FormEvent, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "motion/react";
-import { ArrowLeft, CircleAlert, Loader2 } from "lucide-react";
+import { ArrowLeft, CircleAlert, Eye, EyeOff, Loader2 } from "lucide-react";
 import { signInWithEmail, signUpWithEmail } from "@/lib/api";
 import { normalizeRedirectTo } from "@/lib/utils";
 
@@ -25,6 +25,7 @@ export function AuthCard({
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const redirectTo = normalizeRedirectTo(initialRedirectTo);
   const isSignIn = mode === "sign-in";
@@ -136,17 +137,32 @@ export function AuthCard({
               >
                 Password
               </label>
-              <input
-                id="auth-password"
-                type="password"
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                required
-                minLength={8}
-                autoComplete={isSignIn ? "current-password" : "new-password"}
-                className="h-10 w-full rounded-md border border-border bg-transparent px-3 text-[14px] text-foreground outline-none transition placeholder:text-subtle focus:border-foreground"
-                placeholder="••••••••"
-              />
+              <div className="relative">
+                <input
+                  id="auth-password"
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  required
+                  minLength={8}
+                  autoComplete={isSignIn ? "current-password" : "new-password"}
+                  className="h-10 w-full rounded-md border border-border bg-transparent pl-3 pr-10 text-[14px] text-foreground outline-none transition placeholder:text-subtle focus:border-foreground"
+                  placeholder="••••••••"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-muted-fg hover:text-foreground transition focus:outline-none"
+                  title={showPassword ? "Hide password" : "Show password"}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
             </div>
 
             {error ? (

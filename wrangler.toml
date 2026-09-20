@@ -19,4 +19,4 @@ new_sqlite_classes = ["BoardRoom"]
 
 [vars]
 BOARDLY_APP_URL = "http://localhost:3000"
-BOARDLY_WORKER_URL = "https://your-worker-subdomain.workers.dev"
+BOARDLY_WORKER_URL = "http://localhost:8787"

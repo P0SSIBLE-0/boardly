@@ -11,6 +11,7 @@ import {
   listBoardsForUser,
 } from "./data/boards";
 import { createAuth } from "./auth";
+import { ensureDbInitialized } from "./db/auto-migrate";
 import { badRequest, json, readJson } from "./lib/http";
 import { colorFromId } from "./lib/colors";
 import { createRealtimeToken } from "./lib/realtime";
@@ -346,6 +347,7 @@ const worker = {
       return proxyToApp(request, env);
     }
 
+    await ensureDbInitialized(env.DB);
     const response = await routeApi(request, env);
     const origin = request.headers.get("origin") || env.BOARDLY_APP_URL;
     const corsHeaders = new Headers(response.headers);

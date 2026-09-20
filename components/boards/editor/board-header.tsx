@@ -498,7 +498,7 @@ export function BoardHeader({
               <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[#5e6ad2] text-xs font-bold text-white">
                 {session.user.name?.[0]?.toUpperCase() || session.user.email?.[0]?.toUpperCase() || "U"}
               </div>
-              <span className="hidden sm:inline text-xs font-medium text-gray-700 max-w-[110px] truncate">
+              <span className="hidden sm:inline text-xs font-medium text-gray-700 max-w-28 truncate">
                 {session.user.name || session.user.email}
               </span>
               <ChevronDown className="w-3 h-3 text-gray-400" />
