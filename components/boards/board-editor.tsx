@@ -40,6 +40,12 @@ export function BoardEditor({
   const [initialSnapshot, setInitialSnapshot] = useState<BoardSnapshot>(null);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [canvasElement, setCanvasElement] = useState<HTMLCanvasElement | null>(null);
+
+  const handleCanvasRef = useCallback((el: HTMLCanvasElement | null) => {
+    canvasRef.current = el;
+    setCanvasElement(el);
+  }, []);
 
   // Zustand state
   const activeTool = useEditorStore((s) => s.activeTool);
@@ -80,6 +86,13 @@ export function BoardEditor({
           const nextSession = await getSession();
           if (!active) return;
           setSession(nextSession);
+          setTitle(GUEST_BOARD_TITLE);
+          const localSnapshot = loadGuestSnapshot();
+          if (localSnapshot) {
+            setInitialSnapshot(localSnapshot);
+          }
+        } catch {
+          if (!active) return;
           setTitle(GUEST_BOARD_TITLE);
           const localSnapshot = loadGuestSnapshot();
           if (localSnapshot) {
@@ -157,7 +170,8 @@ export function BoardEditor({
     redo,
   } = useCanvasManager({
     canvasElementRef: canvasRef,
-    initialSnapshot: loading ? null : initialSnapshot,
+    canvasElement,
+    initialSnapshot,
     onCanvasChange: handleCanvasChange,
   });
 
@@ -278,19 +292,17 @@ export function BoardEditor({
   const peerList = useMemo(() => Object.values(peers), [peers]);
   const showToolbox = Boolean(hasSelectedObject || (activeTool !== "select" && activeTool !== "hand"));
 
-  if (loading) {
-    return (
-      <div className="flex min-h-dvh items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <Loader2 className="mx-auto h-6 w-6 animate-spin text-gray-400" />
-          <p className="mt-3 text-sm text-gray-500">Preparing the whiteboard...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <main className="relative flex min-h-dvh flex-col overflow-hidden bg-white select-none">
+    <main className="relative flex h-dvh flex-col overflow-hidden bg-white select-none">
+      {/* Loading Overlay */}
+      {loading && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-white/80 backdrop-blur-xs transition-opacity duration-200">
+          <div className="text-center">
+            <Loader2 className="mx-auto h-6 w-6 animate-spin text-[#5e6ad2]" />
+            <p className="mt-3 text-sm font-medium text-gray-600">Preparing the whiteboard...</p>
+          </div>
+        </div>
+      )}
       {/* Top Header & Floating Toolbar */}
       <BoardHeader
         mode={mode}
@@ -336,7 +348,7 @@ export function BoardEditor({
 
       {/* Canvas Workspace */}
       <div className="relative min-h-0 flex-1 overflow-hidden fabric-canvas-container">
-        <canvas ref={canvasRef} id="fabric-canvas" />
+        <canvas ref={handleCanvasRef} id="fabric-canvas" />
         <CollaboratorCursors peers={peerList} />
       </div>
 

@@ -36,16 +36,20 @@ import {
 import { useEditorStore } from "./use-editor-store";
 
 interface UseCanvasManagerProps {
-  canvasElementRef: React.RefObject<HTMLCanvasElement | null>;
+  canvasElementRef?: React.RefObject<HTMLCanvasElement | null>;
+  canvasElement?: HTMLCanvasElement | null;
   initialSnapshot?: BoardSnapshot;
   onCanvasChange?: (snapshot: BoardSnapshot) => void;
 }
 
 export function useCanvasManager({
   canvasElementRef,
+  canvasElement,
   initialSnapshot,
   onCanvasChange,
 }: UseCanvasManagerProps) {
+  const targetCanvasEl = canvasElement ?? canvasElementRef?.current ?? null;
+  const initialSnapshotLoadedRef = useRef(false);
   const fabricCanvasRef = useRef<FabricCanvas | null>(null);
   const fabricModuleRef = useRef<typeof import("fabric") | null>(null);
   const undoStackRef = useRef<BoardSnapshot[]>([]);
@@ -176,15 +180,16 @@ export function useCanvasManager({
       const fabric = fabricModuleRef.current;
       if (!canvas || !fabric) return;
 
-      if (tool === "draw" && !canvas.freeDrawingBrush) {
-        const brush = new fabric.PencilBrush(canvas);
-        brush.color = color;
-        brush.width = width;
-        canvas.freeDrawingBrush = brush;
-      }
-      if (canvas.freeDrawingBrush) {
-        canvas.freeDrawingBrush.color = color;
-        canvas.freeDrawingBrush.width = width;
+      if (tool === "draw") {
+        if (!canvas.freeDrawingBrush) {
+          const brush = new fabric.PencilBrush(canvas);
+          brush.color = color;
+          brush.width = width;
+          canvas.freeDrawingBrush = brush;
+        } else {
+          canvas.freeDrawingBrush.color = color;
+          canvas.freeDrawingBrush.width = width;
+        }
       }
 
       switch (tool) {
@@ -729,26 +734,26 @@ export function useCanvasManager({
     let cancelled = false;
     let canvasInstance: FabricCanvas | null = null;
     let resizeHandler: (() => void) | null = null;
+    let scrollHandler: (() => void) | null = null;
     let resizeObserver: ResizeObserver | null = null;
 
     async function init() {
-      const canvasEl = canvasElementRef.current;
-      if (!canvasEl) return;
+      if (!targetCanvasEl) return;
 
       await new Promise((resolve) => requestAnimationFrame(() => resolve(null)));
-      if (cancelled || !canvasElementRef.current) return;
+      if (cancelled || !targetCanvasEl) return;
 
       const fabric = await import("fabric");
-      if (cancelled || !canvasElementRef.current) return;
+      if (cancelled || !targetCanvasEl) return;
 
       fabricModuleRef.current = fabric;
       const { Canvas, PencilBrush, Rect, Ellipse, Line, Polygon, IText, Path } = fabric;
 
-      const container = canvasElementRef.current.parentElement;
-      const containerWidth = Math.max(320, container?.clientWidth || window.innerWidth);
-      const containerHeight = Math.max(320, container?.clientHeight || window.innerHeight - 120);
+      const workspaceContainer = targetCanvasEl.parentElement;
+      const containerWidth = Math.max(320, workspaceContainer?.clientWidth || window.innerWidth);
+      const containerHeight = Math.max(320, workspaceContainer?.clientHeight || window.innerHeight);
 
-      const canvas = new Canvas(canvasElementRef.current, {
+      const canvas = new Canvas(targetCanvasEl, {
         width: containerWidth,
         height: containerHeight,
         backgroundColor: "#f8fafc",
@@ -779,6 +784,8 @@ export function useCanvasManager({
       // Style object controls globally
       const objProto = fabric.FabricObject?.prototype;
       if (objProto) {
+        objProto.originX = "left";
+        objProto.originY = "top";
         objProto.transparentCorners = false;
         objProto.cornerColor = "#ffffff";
         objProto.cornerStrokeColor = "#5e6ad2";
@@ -814,7 +821,8 @@ export function useCanvasManager({
         latestStrokeWidthRef.current,
       );
 
-      if (initialSnapshot) {
+      if (initialSnapshot && !initialSnapshotLoadedRef.current) {
+        initialSnapshotLoadedRef.current = true;
         await loadSnapshotIntoCanvas(initialSnapshot);
         if (!cancelled) saveCanvasState();
       } else if (!cancelled) {
@@ -822,24 +830,40 @@ export function useCanvasManager({
       }
 
       const sizeCanvas = () => {
-        const el = canvasElementRef.current;
-        const host = el?.parentElement;
-        if (!host || !canvasInstance || cancelled) return;
-        const w = Math.max(320, host.clientWidth || window.innerWidth);
-        const h = Math.max(320, host.clientHeight || window.innerHeight - 120);
+        if (!workspaceContainer || !canvasInstance || cancelled) return;
+        const w = Math.max(320, workspaceContainer.clientWidth || window.innerWidth);
+        const h = Math.max(320, workspaceContainer.clientHeight || window.innerHeight);
         try {
           canvasInstance.setDimensions({ width: w, height: h });
+          canvasInstance.calcOffset();
           renderCanvas(canvasInstance);
         } catch {
           // ignore
         }
       };
 
+      // Force immediate sizing and offset calculation
+      sizeCanvas();
+      try {
+        canvas.calcOffset();
+      } catch {
+        // ignore
+      }
+
       resizeHandler = sizeCanvas;
       window.addEventListener("resize", resizeHandler);
-      if (typeof ResizeObserver !== "undefined" && canvasElementRef.current?.parentElement) {
+      const onScroll = () => {
+        try {
+          canvasInstance?.calcOffset();
+        } catch {
+          // ignore
+        }
+      };
+      scrollHandler = onScroll;
+      window.addEventListener("scroll", onScroll, { passive: true });
+      if (typeof ResizeObserver !== "undefined" && workspaceContainer) {
         resizeObserver = new ResizeObserver(() => sizeCanvas());
-        resizeObserver.observe(canvasElementRef.current.parentElement);
+        resizeObserver.observe(workspaceContainer);
       }
 
       canvas.on("object:added", (e) => {
@@ -854,7 +878,7 @@ export function useCanvasManager({
             e.target.evented = true;
           }
         }
-        if (canvas.isDrawingMode) return;
+        if (canvas.isDrawingMode || isDrawingShapeRef.current) return;
         saveCanvasState();
         notifyChange();
       });
@@ -869,13 +893,25 @@ export function useCanvasManager({
         saveCanvasState();
         notifyChange();
       });
-      canvas.on("path:created", () => {
+      canvas.on("path:created", (e: unknown) => {
         if (cancelled || isLoadingSnapshotRef.current) return;
+        const pathObj = (e as { path?: FabricObject })?.path;
+        if (pathObj) {
+          pathObj.centeredRotation = true;
+          if (pathObj.controls?.mtr) {
+            setupMtrControl(pathObj.controls.mtr);
+          }
+        }
         saveCanvasState();
         notifyChange();
       });
 
       canvas.on("mouse:down", (opt: TPointerEventInfo) => {
+        try {
+          canvas.calcOffset();
+        } catch {
+          // ignore
+        }
         const tool = latestToolRef.current;
         if (tool === "select" || tool === "draw" || tool === "image" || tool === "hand") return;
 
@@ -893,6 +929,8 @@ export function useCanvasManager({
         if (tool === "text") {
           const pointer = getCanvasPointer(canvas, opt);
           const text = new IText("Type here", {
+            originX: "left",
+            originY: "top",
             left: pointer.x,
             top: pointer.y,
             fontSize: 20,
@@ -943,6 +981,8 @@ export function useCanvasManager({
 
         if (tool === "rectangle") {
           const rect = new Rect({
+            originX: "left",
+            originY: "top",
             left: pointer.x,
             top: pointer.y,
             width: 1,
@@ -963,10 +1003,12 @@ export function useCanvasManager({
           activeShapeRef.current = rect as CanvasShapeObject;
         } else if (tool === "ellipse") {
           const ellipse = new Ellipse({
+            originX: "left",
+            originY: "top",
             left: pointer.x,
             top: pointer.y,
-            rx: 1,
-            ry: 1,
+            rx: 0.5,
+            ry: 0.5,
             fill,
             stroke: color,
             strokeWidth: width,
@@ -981,6 +1023,8 @@ export function useCanvasManager({
           activeShapeRef.current = ellipse as CanvasShapeObject;
         } else if (tool === "line") {
           const line = new Line([pointer.x, pointer.y, pointer.x + 1, pointer.y + 1], {
+            originX: "left",
+            originY: "top",
             stroke: color,
             strokeWidth: width,
             strokeDashArray: dash,
@@ -996,12 +1040,14 @@ export function useCanvasManager({
         } else if (tool === "diamond") {
           const diamond = new Polygon(
             [
-              { x: 0, y: -50 },
               { x: 50, y: 0 },
+              { x: 100, y: 50 },
+              { x: 50, y: 100 },
               { x: 0, y: 50 },
-              { x: -50, y: 0 },
             ],
             {
+              originX: "left",
+              originY: "top",
               left: pointer.x,
               top: pointer.y,
               fill,
@@ -1014,8 +1060,8 @@ export function useCanvasManager({
               opacity: op,
               selectable: false,
               evented: false,
-              scaleX: 0.01,
-              scaleY: 0.01,
+              scaleX: 0.001,
+              scaleY: 0.001,
               centeredRotation: true,
             },
           );
@@ -1083,23 +1129,25 @@ export function useCanvasManager({
           const h = Math.max(1, Math.abs(pointer.y - start.y));
           const left = Math.min(pointer.x, start.x);
           const top = Math.min(pointer.y, start.y);
-          shape.set({ left, top, width: w, height: h });
+          shape.set({ originX: "left", originY: "top", left, top, width: w, height: h });
         } else if (latestToolRef.current === "ellipse") {
-          const rx = Math.max(1, Math.abs(pointer.x - start.x) / 2);
-          const ry = Math.max(1, Math.abs(pointer.y - start.y) / 2);
+          const w = Math.max(1, Math.abs(pointer.x - start.x));
+          const h = Math.max(1, Math.abs(pointer.y - start.y));
           const left = Math.min(pointer.x, start.x);
           const top = Math.min(pointer.y, start.y);
-          shape.set({ left, top, rx, ry });
+          shape.set({ originX: "left", originY: "top", left, top, rx: w / 2, ry: h / 2 });
         } else if (latestToolRef.current === "line") {
           shape.set({ x2: pointer.x, y2: pointer.y } as { x2: number; y2: number });
         } else if (latestToolRef.current === "diamond") {
           const w = Math.max(1, Math.abs(pointer.x - start.x));
           const h = Math.max(1, Math.abs(pointer.y - start.y));
           shape.set({
+            originX: "left",
+            originY: "top",
             left: Math.min(pointer.x, start.x),
             top: Math.min(pointer.y, start.y),
-            scaleX: Math.max(0.01, w / 100),
-            scaleY: Math.max(0.01, h / 100),
+            scaleX: Math.max(0.001, w / 100),
+            scaleY: Math.max(0.001, h / 100),
           });
         }
 
@@ -1210,6 +1258,42 @@ export function useCanvasManager({
 
         if (isDrawingShapeRef.current && activeShapeRef.current) {
           const shape = activeShapeRef.current;
+          const start = shapeStartPointRef.current;
+          const end = lastPointerRef.current || start;
+          const dragDist = Math.hypot(end.x - start.x, end.y - start.y);
+
+          // If the user clicked without dragging, provide an intuitive default size
+          if (dragDist < 6) {
+            if (latestToolRef.current === "rectangle") {
+              shape.set({
+                originX: "left",
+                originY: "top",
+                left: start.x,
+                top: start.y,
+                width: 100,
+                height: 70,
+              });
+            } else if (latestToolRef.current === "ellipse") {
+              shape.set({
+                originX: "left",
+                originY: "top",
+                left: start.x,
+                top: start.y,
+                rx: 50,
+                ry: 35,
+              });
+            } else if (latestToolRef.current === "diamond") {
+              shape.set({
+                originX: "left",
+                originY: "top",
+                left: start.x,
+                top: start.y,
+                scaleX: 1,
+                scaleY: 1,
+              });
+            }
+          }
+
           shape.set({ selectable: true, evented: true });
           shape.centeredRotation = true;
           if (shape.controls?.mtr) {
@@ -1381,8 +1465,10 @@ export function useCanvasManager({
     return () => {
       cancelled = true;
       if (resizeHandler) window.removeEventListener("resize", resizeHandler);
+      if (scrollHandler) window.removeEventListener("scroll", scrollHandler);
       if (resizeObserver) resizeObserver.disconnect();
       if (detachListeners) detachListeners();
+      canvasReadyRef.current = false;
       if (canvasInstance) {
         try {
           canvasInstance.dispose();
@@ -1391,9 +1477,17 @@ export function useCanvasManager({
         }
       }
       fabricCanvasRef.current = null;
-      canvasReadyRef.current = false;
     };
-  }, [canvasElementRef, initialSnapshot, applyToolToCanvas, handleSelectObject, saveCanvasState, notifyChange, loadSnapshotIntoCanvas, setViewportLost, setZoom, setActiveTool]);
+  }, [targetCanvasEl, applyToolToCanvas, handleSelectObject, saveCanvasState, notifyChange, loadSnapshotIntoCanvas, setViewportLost, setZoom, setActiveTool]);
+
+  // Load initial snapshot when it becomes available after canvas is ready
+  useEffect(() => {
+    if (!initialSnapshot || !canvasReadyRef.current || initialSnapshotLoadedRef.current) return;
+    initialSnapshotLoadedRef.current = true;
+    void loadSnapshotIntoCanvas(initialSnapshot).then(() => {
+      saveCanvasState();
+    });
+  }, [initialSnapshot, loadSnapshotIntoCanvas, saveCanvasState]);
 
   // Keyboard shortcut listener
   useEffect(() => {

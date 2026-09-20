@@ -80,7 +80,8 @@ export const MIN_ZOOM = 0.1;
 export const MAX_ZOOM = 8;
 
 export const CURSORS = {
-  crosshair: `url("data:image/svg+xml,%3Csvg width='24' height='24' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M12 2v20M2 12h20' stroke='%23ffffff' stroke-width='3.5' stroke-linecap='round'/%3E%3Cpath d='M12 3v18M3 12h18' stroke='%2318181b' stroke-width='1.5' stroke-linecap='round'/%3E%3Ccircle cx='12' cy='12' r='1.5' fill='%235e6ad2'/%3E%3C/svg%3E") 12 12, crosshair`,
-  eraser: `url("data:image/svg+xml,%3Csvg width='24' height='24' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='12' cy='12' r='8' stroke='%23ffffff' stroke-width='3'/%3E%3Ccircle cx='12' cy='12' r='8' stroke='%23374151' stroke-width='1.5' fill='rgba(156, 163, 175, 0.25)'/%3E%3C/svg%3E") 12 12, default`,
-  text: `url("data:image/svg+xml,%3Csvg width='24' height='24' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M8 4h8M12 4v16M8 20h8' stroke='%23ffffff' stroke-width='3.5' stroke-linecap='round'/%3E%3Cpath d='M8 4h8M12 4v16M8 20h8' stroke='%2318181b' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E") 12 12, text`,
+  crosshair: `url("data:image/svg+xml,%3Csvg width='24' height='24' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M12 2v20M2 12h20' stroke='%23ffffff' stroke-width='3.5' stroke-linecap='round'/%3E%3Cpath d='M12 2v20M2 12h20' stroke='%230f172a' stroke-width='1.5' stroke-linecap='round'/%3E%3Ccircle cx='12' cy='12' r='1.5' fill='%230f172a'/%3E%3C/svg%3E") 12 12, crosshair`,
+  eraser: `url("data:image/svg+xml,%3Csvg width='24' height='24' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='12' cy='12' r='8' stroke='%23ffffff' stroke-width='3'/%3E%3Ccircle cx='12' cy='12' r='8' stroke='%230f172a' stroke-width='1.5' fill='rgba(15, 23, 42, 0.15)'/%3E%3Ccircle cx='12' cy='12' r='1.2' fill='%230f172a'/%3E%3C/svg%3E") 12 12, crosshair`,
+  text: `url("data:image/svg+xml,%3Csvg width='24' height='24' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M7 4h10M12 4v16M7 20h10' stroke='%23ffffff' stroke-width='3.5' stroke-linecap='round'/%3E%3Cpath d='M7 4h10M12 4v16M7 20h10' stroke='%230f172a' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E") 12 12, text`,
 };
+

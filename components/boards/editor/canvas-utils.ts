@@ -84,6 +84,13 @@ export function getCanvasPointer(
   }
 
   if (opt.e && canvas) {
+    if (typeof canvas.calcOffset === "function") {
+      try {
+        canvas.calcOffset();
+      } catch {
+        // ignore
+      }
+    }
     if (typeof canvas.getScenePoint === "function") {
       try {
         const sp = canvas.getScenePoint(opt.e);
