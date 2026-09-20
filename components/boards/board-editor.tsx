@@ -128,8 +128,8 @@ export function BoardEditor({
     };
   }, [boardId, mode, setTitle, setLoading, flashStatus]);
 
-  const broadcastSnapshotRef = useRef<(snapshot: BoardSnapshot) => void>(() => {});
-  const broadcastPresenceRef = useRef<(coords: { x: number; y: number }) => void>(() => {});
+  const broadcastSnapshotRef = useRef<(snapshot: BoardSnapshot) => void>(() => { });
+  const broadcastPresenceRef = useRef<(coords: { x: number; y: number }) => void>(() => { });
 
   // Handle local change broadcast & persistence
   const handleCanvasChange = useCallback(
@@ -151,7 +151,6 @@ export function BoardEditor({
   // Canvas manager hook
   const {
     fabricCanvasRef,
-    handleSelectObject,
     updateStrokeColor,
     updateFillColor,
     updateStrokeWidth,
