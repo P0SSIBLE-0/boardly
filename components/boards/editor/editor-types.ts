@@ -65,7 +65,6 @@ export const STROKE_COLORS = [
   { hex: "#2f9e44", label: "Green" },
   { hex: "#1971c2", label: "Blue" },
   { hex: "#f08c00", label: "Orange" },
-  { hex: "#000000", label: "Black" },
 ];
 
 export const BG_COLORS = [

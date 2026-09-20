@@ -9,6 +9,7 @@ import {
   ChevronUp,
   ChevronsUp,
   X,
+  Pipette,
 } from "lucide-react";
 import {
   STROKE_COLORS,
@@ -61,43 +62,87 @@ function PropertyControls({
     <>
       {/* Stroke Palette */}
       <div>
-        <label className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider block mb-1">
-          Stroke
-        </label>
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center justify-between mb-1">
+          <label className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
+            Stroke
+          </label>
+          <span className="text-[10px] font-mono text-gray-400 uppercase">
+            {strokeColor}
+          </span>
+        </div>
+        <div className="flex items-center gap-1.5 flex-wrap">
           {STROKE_COLORS.map((c) => (
             <button
               key={c.hex}
               type="button"
               onClick={() => onStrokeColorChange(c.hex)}
-              className={`h-5 w-5 rounded-sm border transition flex items-center justify-center ${strokeColor === c.hex
-                ? "ring-2 ring-[#5e6ad2] ring-offset-1 border-transparent scale-105"
-                : "border-gray-200 hover:scale-105"
-                }`}
+              className={`h-5 w-5 rounded-sm border transition flex items-center justify-center ${
+                strokeColor.toLowerCase() === c.hex.toLowerCase()
+                  ? "ring-2 ring-[#5e6ad2] ring-offset-1 border-transparent scale-105"
+                  : "border-gray-200 hover:scale-105"
+              }`}
               style={{ backgroundColor: c.hex }}
               title={c.label}
             />
           ))}
+
+          {/* Custom Stroke Color Picker */}
+          {(() => {
+            const isPreset = STROKE_COLORS.some((c) => c.hex.toLowerCase() === strokeColor.toLowerCase());
+            const hexVal = strokeColor.startsWith("#") && strokeColor.length === 7 ? strokeColor : "#1e1e1e";
+            return (
+              <label
+                className={`relative h-5 w-5 rounded-sm border transition flex items-center justify-center cursor-pointer overflow-hidden ${
+                  !isPreset
+                    ? "ring-2 ring-[#5e6ad2] ring-offset-1 border-transparent scale-105"
+                    : "border-gray-200 hover:border-gray-300 hover:scale-105"
+                }`}
+                style={{
+                  backgroundColor: !isPreset ? strokeColor : "transparent",
+                  backgroundImage: isPreset
+                    ? "conic-gradient(from 180deg at 50% 50%, #ff0000, #ff8000, #ffff00, #00ff00, #00ffff, #0000ff, #8000ff, #ff0080, #ff0000)"
+                    : "none",
+                }}
+                title={!isPreset ? `Custom stroke: ${strokeColor}` : "Pick custom stroke color"}
+              >
+                <input
+                  type="color"
+                  value={hexVal}
+                  onChange={(e) => onStrokeColorChange(e.target.value)}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                />
+                {isPreset && (
+                  <Pipette className="w-2.5 h-2.5 text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)] pointer-events-none" />
+                )}
+              </label>
+            );
+          })()}
         </div>
       </div>
 
       {/* Background Palette */}
       <div>
-        <label className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider block mb-1">
-          Background
-        </label>
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center justify-between mb-1">
+          <label className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
+            Background
+          </label>
+          <span className="text-[10px] font-mono text-gray-400 uppercase">
+            {fillColor === "transparent" ? "None" : fillColor}
+          </span>
+        </div>
+        <div className="flex items-center gap-1.5 flex-wrap">
           {BG_COLORS.map((c) => {
-            const isActive = fillColor === c.hex;
+            const isActive = fillColor.toLowerCase() === c.hex.toLowerCase();
             return (
               <button
                 key={c.hex}
                 type="button"
                 onClick={() => onFillColorChange(c.hex)}
-                className={`h-5 w-5 rounded-sm border transition relative overflow-hidden flex items-center justify-center ${isActive
-                  ? "ring-2 ring-[#5e6ad2] ring-offset-1 border-transparent scale-105"
-                  : "border-gray-200 hover:scale-105"
-                  } ${c.isChecker ? "bg-checkerboard" : ""}`}
+                className={`h-5 w-5 rounded-sm border transition relative overflow-hidden flex items-center justify-center ${
+                  isActive
+                    ? "ring-2 ring-[#5e6ad2] ring-offset-1 border-transparent scale-105"
+                    : "border-gray-200 hover:scale-105"
+                } ${c.isChecker ? "bg-checkerboard" : ""}`}
                 style={{ backgroundColor: c.isChecker ? undefined : c.hex }}
                 title={c.label}
               >
@@ -109,6 +154,39 @@ function PropertyControls({
               </button>
             );
           })}
+
+          {/* Custom Background Color Picker */}
+          {(() => {
+            const isPreset = BG_COLORS.some((c) => c.hex.toLowerCase() === fillColor.toLowerCase());
+            const isCustom = !isPreset && fillColor !== "transparent";
+            const hexVal = fillColor.startsWith("#") && fillColor.length === 7 ? fillColor : "#ffffff";
+            return (
+              <label
+                className={`relative h-5 w-5 rounded-sm border transition flex items-center justify-center cursor-pointer overflow-hidden ${
+                  isCustom
+                    ? "ring-2 ring-[#5e6ad2] ring-offset-1 border-transparent scale-105"
+                    : "border-gray-200 hover:border-gray-300 hover:scale-105"
+                }`}
+                style={{
+                  backgroundColor: isCustom ? fillColor : "transparent",
+                  backgroundImage: !isCustom
+                    ? "conic-gradient(from 180deg at 50% 50%, #ff0000, #ff8000, #ffff00, #00ff00, #00ffff, #0000ff, #8000ff, #ff0080, #ff0000)"
+                    : "none",
+                }}
+                title={isCustom ? `Custom background: ${fillColor}` : "Pick custom background color"}
+              >
+                <input
+                  type="color"
+                  value={hexVal}
+                  onChange={(e) => onFillColorChange(e.target.value)}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                />
+                {!isCustom && (
+                  <Pipette className="w-2.5 h-2.5 text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)] pointer-events-none" />
+                )}
+              </label>
+            );
+          })()}
         </div>
       </div>
 
